@@ -1,0 +1,64 @@
+{
+  "name": "lumpia",
+  "displayName": "Lumpia",
+  "description": "Idiomatically roll text to a specific line width — like a perfectly rolled lumpia 🥟",
+  "version": "0.0.1",
+  "publisher": "lumpia",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Formatters"
+  ],
+  "keywords": [
+    "roll",
+    "line width",
+    "word roll",
+    "formatter"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "lumpia.roll",
+        "title": "Lumpia: Roll Text"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "lumpia.roll",
+        "key": "alt+r",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "Lumpia",
+      "properties": {
+        "lumpia.column": {
+          "type": "number",
+          "default": 80,
+          "description": "The column at which to roll text."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "lint": "eslint src",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}
