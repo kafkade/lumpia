@@ -9,11 +9,12 @@ Lumpia is a VS Code extension that rolls text to a configurable column width. It
 ```sh
 npm run build          # Production build via esbuild
 npm run watch          # Dev build with file watching
+npm run test           # Run unit tests (vitest)
 npm run lint           # ESLint (eslint src)
 npm run package        # Package as .vsix
 ```
 
-There are no tests yet.
+Tests use vitest. Unit tests for `rollText` live in `src/rollText.test.ts`.
 
 ## Architecture
 
