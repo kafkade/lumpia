@@ -3,8 +3,17 @@
   "displayName": "Lumpia",
   "description": "Idiomatically roll text to a specific line width — like a perfectly rolled lumpia 🥟",
   "version": "0.0.1",
-  "publisher": "lumpia",
+  "publisher": "kafkade",
   "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kafkade/lumpia"
+  },
+  "homepage": "https://kafkade.com",
+  "bugs": {
+    "url": "https://kafkade.com"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
