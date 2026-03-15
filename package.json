@@ -60,7 +60,9 @@
     "test": "vitest run",
     "lint": "eslint src",
     "package": "vsce package",
-    "publish": "vsce publish"
+    "publish": "vsce publish",
+    "site:dev": "cd site && npm run dev",
+    "site:build": "cd site && npm run build"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
