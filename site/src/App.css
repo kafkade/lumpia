@@ -52,6 +52,21 @@ body {
   overflow-x: hidden;
 }
 
+.app {
+  position: relative;
+}
+
+.app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
 a {
   color: var(--gold);
   text-decoration: none;
@@ -109,10 +124,9 @@ img {
   color: var(--gold);
 }
 
-.nav-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+.nav-emoji {
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .nav-links {
@@ -176,9 +190,10 @@ img {
 }
 
 .hero-logo {
-  width: min(340px, 60vw);
+  width: min(300px, 50vw);
+  height: auto;
   margin-bottom: 2.5rem;
-  filter: drop-shadow(0 0 60px rgba(237, 170, 37, 0.15));
+  filter: drop-shadow(0 0 50px rgba(237, 170, 37, 0.25));
   animation: logoFloat 8s ease-in-out infinite;
 }
 
@@ -849,7 +864,7 @@ img {
   }
 
   .hero-logo {
-    width: min(260px, 70vw);
+    width: min(220px, 55vw);
     margin-bottom: 2rem;
   }
 

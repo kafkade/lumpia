@@ -1,7 +1,5 @@
 import { useEffect } from "react";
 import "./App.css";
-import lumpiaDark from "./assets/lumpia-dark.png";
-import icon from "./assets/icon.png";
 
 const MARKETPLACE_URL =
   "https://marketplace.visualstudio.com/items?itemName=kafkade.lumpia";
@@ -15,6 +13,129 @@ line width. Unlike soft wrap, it
 actually reshapes your text by inserting
 real line breaks at the right column —
 respecting paragraph boundaries.`;
+
+function LumpiaIcon({
+  size = 200,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      width={size}
+      height={size}
+      className={className}
+      role="img"
+      aria-label="Lumpia"
+      fill="none"
+    >
+      <defs>
+        <linearGradient id="lp-body" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0%" stopColor="#f7d26b" />
+          <stop offset="35%" stopColor="#edaa25" />
+          <stop offset="75%" stopColor="#d4911a" />
+          <stop offset="100%" stopColor="#b07210" />
+        </linearGradient>
+        <linearGradient id="lp-shade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#000" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.3" />
+        </linearGradient>
+        <linearGradient id="lp-shine" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.18" />
+          <stop offset="45%" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        <radialGradient id="lp-glow" cx="50%" cy="50%" r="55%">
+          <stop offset="70%" stopColor="#edaa25" stopOpacity="0" />
+          <stop offset="100%" stopColor="#edaa25" stopOpacity="0.1" />
+        </radialGradient>
+        <clipPath id="lp-clip">
+          <ellipse cx="0" cy="0" rx="16" ry="20" />
+        </clipPath>
+      </defs>
+
+      {/* Ambient glow */}
+      <circle cx="100" cy="100" r="96" fill="url(#lp-glow)" />
+
+      {/* Gold ring */}
+      <circle
+        cx="100"
+        cy="100"
+        r="86"
+        stroke="#edaa25"
+        strokeWidth="1.5"
+        opacity="0.45"
+      />
+
+      {/* Lumpia body - rotated */}
+      <g transform="rotate(-32, 100, 100)">
+        {/* Capsule body */}
+        <rect
+          x="35"
+          y="75"
+          width="132"
+          height="50"
+          rx="25"
+          fill="url(#lp-body)"
+        />
+        <rect
+          x="35"
+          y="75"
+          width="132"
+          height="50"
+          rx="25"
+          fill="url(#lp-shade)"
+        />
+
+        {/* Top highlight */}
+        <rect
+          x="50"
+          y="75"
+          width="100"
+          height="22"
+          rx="11"
+          fill="url(#lp-shine)"
+        />
+
+        {/* Wrapper fold */}
+        <path
+          d="M 100 75 Q 95 88 97 100"
+          stroke="#b87d10"
+          strokeWidth="0.8"
+          opacity="0.35"
+        />
+
+        {/* Cross-section */}
+        <g transform="translate(60, 100)">
+          <ellipse
+            cx="0"
+            cy="0"
+            rx="19"
+            ry="23"
+            fill="#06101f"
+            stroke="#b87d10"
+            strokeWidth="1"
+          />
+          <g clipPath="url(#lp-clip)">
+            <line x1="-12" y1="-13" x2="9" y2="-13" stroke="#0d9e9e" strokeWidth="2" strokeLinecap="round" opacity="0.9" />
+            <line x1="-9" y1="-6.5" x2="13" y2="-6.5" stroke="#0a7373" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+            <line x1="-13" y1="0" x2="11" y2="0" stroke="#0d9e9e" strokeWidth="2" strokeLinecap="round" opacity="0.85" />
+            <line x1="-10" y1="6.5" x2="7" y2="6.5" stroke="#0a7373" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+            <line x1="-12" y1="13" x2="10" y2="13" stroke="#0d9e9e" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
+          </g>
+        </g>
+      </g>
+
+      {/* Sparkle */}
+      <path
+        d="M 163 155 l 2 -5 l 2 5 l 5 2 l -5 2 l -2 5 l -2 -5 l -5 -2 z"
+        fill="#d0d0d8"
+        opacity="0.35"
+      />
+    </svg>
+  );
+}
 
 function EditorWindow({
   filename,
@@ -76,7 +197,7 @@ function App() {
       <nav className="nav">
         <div className="nav-inner">
           <a href="#" className="nav-logo">
-            <img src={icon} alt="" className="nav-icon" />
+            <span className="nav-emoji" aria-hidden="true">🥟</span>
             <span>Lumpia</span>
           </a>
           <div className="nav-links">
@@ -93,11 +214,7 @@ function App() {
       {/* Hero */}
       <section className="hero">
         <div className="hero-glow" />
-        <img
-          src={lumpiaDark}
-          alt="Lumpia — Text Wrapper for VS Code"
-          className="hero-logo"
-        />
+        <LumpiaIcon size={300} className="hero-logo" />
         <h1 className="hero-title">
           Roll your text.
           <br />

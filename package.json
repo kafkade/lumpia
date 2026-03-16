@@ -65,6 +65,7 @@
     "site:build": "cd site && npm run build"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.5.0",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.2.0",
