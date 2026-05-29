@@ -49,6 +49,11 @@
           "type": "number",
           "default": 80,
           "description": "The column at which to roll text."
+        },
+        "lumpia.reformat": {
+          "type": "boolean",
+          "default": false,
+          "description": "Normalize comment prefix spacing to a single space after the marker."
         }
       }
     }

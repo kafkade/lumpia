@@ -1,12 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-
-vi.mock("vscode", () => ({
-  workspace: { getConfiguration: () => ({ get: () => undefined }) },
-  window: { activeTextEditor: undefined },
-  commands: { registerCommand: () => ({ dispose: () => {} }) },
-}));
-
-import { rollText } from "./extension";
+import { describe, it, expect } from "vitest";
+import { rollText } from "./engine/wrapper";
 
 describe("rollText", () => {
   it("wraps a long line at the specified column", () => {
