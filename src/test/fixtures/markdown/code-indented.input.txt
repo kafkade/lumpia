@@ -1,0 +1,7 @@
+Example code:
+
+    function add(a, b) {
+      return a + b;
+    }
+
+This adds two numbers.

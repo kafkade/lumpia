@@ -1,0 +1,12 @@
+Validates and processes the input configuration.
+
+# Arguments
+
+- `path` - Path to the config file on disk
+- `strict` - Whether to reject unknown keys in the config
+
+# Examples
+
+```
+let result = process("config.toml", true);
+```

@@ -1,0 +1,3 @@
+A utility module for processing CSV files. Handles encoding
+detection, delimiter inference, and streaming reads for
+large files.

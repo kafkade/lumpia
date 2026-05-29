@@ -1,0 +1,3 @@
+@param {string} userName The name of the user that will be
+                         displayed in the greeting and
+                         logged to the console for debugging

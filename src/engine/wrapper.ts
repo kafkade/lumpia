@@ -1,33 +1,27 @@
 import type { DocumentLike, WrappableRegion } from "../parser/types";
-import { prefixToString, normalizePrefix, prefixLength } from "../parser/prefix";
+import { prefixToString, normalizePrefix } from "../parser/prefix";
+import { displayWidth } from "../utils/displayWidth";
+import { parseContentBlocks, wrapBlock } from "./contentBlocks";
 
-export function rollText(text: string, column: number): string {
-  const paragraphs = text.split(/\n\s*\n/);
+export interface WrapOptions {
+  tabWidth?: number;
+}
 
-  return paragraphs
-    .map((paragraph) => {
-      const words = paragraph.replace(/\s+/g, " ").trim().split(" ");
-      const lines: string[] = [];
-      let currentLine = "";
-
-      for (const word of words) {
-        if (!currentLine) {
-          currentLine = word;
-        } else if (currentLine.length + 1 + word.length <= column) {
-          currentLine += " " + word;
-        } else {
-          lines.push(currentLine);
-          currentLine = word;
-        }
-      }
-
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-
-      return lines.join("\n");
-    })
-    .join("\n\n");
+/**
+ * Roll text to a target column width using a block-aware content model.
+ *
+ * Parses content into typed blocks (paragraphs, lists, code fences, etc.)
+ * and wraps each block according to its type. Uses display-width-aware
+ * column calculation for correct CJK, emoji, and tab handling.
+ */
+export function rollText(
+  text: string,
+  column: number,
+  options: WrapOptions = {}
+): string {
+  const { tabWidth = 4 } = options;
+  const blocks = parseContentBlocks(text);
+  return blocks.map((b) => wrapBlock(b, column, tabWidth)).join("\n");
 }
 
 /**
@@ -41,8 +35,10 @@ export function wrapRegion(
   region: WrappableRegion,
   document: DocumentLike,
   column: number,
-  reformat = false
+  reformat = false,
+  options: WrapOptions = {}
 ): string {
+  const { tabWidth = 4 } = options;
   const { contentRange, prefix } = region;
   const inputPrefix = prefixToString(prefix);
   const outputPrefix = prefixToString(
@@ -60,10 +56,9 @@ export function wrapRegion(
   }
 
   const innerText = lines.join("\n");
-  const availableWidth = Math.max(1, column - prefixLength(
-    reformat ? normalizePrefix(prefix) : prefix
-  ));
-  const wrapped = rollText(innerText, availableWidth);
+  const prefixDisplayWidth = displayWidth(outputPrefix, tabWidth);
+  const availableWidth = Math.max(1, column - prefixDisplayWidth);
+  const wrapped = rollText(innerText, availableWidth, { tabWidth });
 
   // Re-apply the (possibly normalized) prefix to each wrapped line
   return wrapped

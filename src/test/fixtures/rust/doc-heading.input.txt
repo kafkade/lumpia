@@ -1,0 +1,9 @@
+# Connection Pool
+
+Manages a pool of database connections.
+Connections are lazily initialized and
+returned to the pool after use.
+
+# Panics
+
+Panics if the pool size is zero.

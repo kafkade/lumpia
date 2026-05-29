@@ -1,0 +1,1 @@
+> This is a blockquote with text that should be wrapped within the quote prefix boundaries
