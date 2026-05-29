@@ -1,0 +1,3 @@
+@param name The name of the user that will be displayed in
+            the greeting message and also logged to the
+            console

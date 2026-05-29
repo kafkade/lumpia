@@ -1,0 +1,10 @@
+Parse a date string into a datetime object.
+
+Example usage:
+
+```python
+dt = parse_date('2024-01-15')
+print(dt.year)  # 2024
+```
+
+Supports ISO 8601 and common US date formats.

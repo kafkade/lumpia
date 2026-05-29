@@ -1,0 +1,3 @@
+This is a single paragraph of text that
+should be wrapped at the specified
+column width boundary

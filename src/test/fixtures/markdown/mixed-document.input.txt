@@ -1,0 +1,30 @@
+# Project README
+
+This project provides a set of utilities for text processing and formatting.
+
+## Features
+
+- Word wrapping at configurable column widths with Unicode support
+- Paragraph detection and preservation of blank lines between sections
+- Code block preservation for fenced and indented code
+
+## Usage
+
+```bash
+npm install lumpia
+```
+
+Then import and use:
+
+```typescript
+import { rollText } from "lumpia";
+const wrapped = rollText(text, 80);
+```
+
+## Configuration
+
+| Option  | Default | Description          |
+|---------|---------|----------------------|
+| column  | 80      | Target column width  |
+
+> Note: All functions are pure and side-effect free.

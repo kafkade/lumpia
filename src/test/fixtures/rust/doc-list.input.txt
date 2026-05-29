@@ -1,0 +1,6 @@
+Supported output formats:
+
+- JSON: The default format for API responses
+- YAML: Used for configuration file generation
+- TOML: An alternative configuration format
+- XML: Legacy format for backward compatibility with older systems

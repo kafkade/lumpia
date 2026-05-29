@@ -1,0 +1,9 @@
+Here is an example:
+
+```javascript
+function greet(name) {
+  return `Hello, ${name}! Welcome to our application.`;
+}
+```
+
+The function returns a greeting string.

@@ -1,0 +1,2 @@
+See :class:`UserManager` and :func:`create_user` for details
+on how user accounts are created and managed in the system

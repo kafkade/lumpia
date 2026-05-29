@@ -1,0 +1,3 @@
+This is a long comment that describes a
+function and needs to be wrapped at the
+target column width

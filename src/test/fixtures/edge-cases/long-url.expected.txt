@@ -1,0 +1,3 @@
+Visit
+https://example.com/very/long/path/to/resource/that/exceeds/column
+for details
