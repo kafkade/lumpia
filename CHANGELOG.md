@@ -16,6 +16,8 @@
 - Config resolution with 7-level precedence: explicit arg → ruler cycling → language-specific → global → editor.rulers → editor.wordWrapColumn → default (80)
 - `Lumpia: Roll Text at Column…` command (`lumpia.rollAtColumn`) for one-off wrapping at a specific column width
 - Golden test harness with 52 fixture pairs across TypeScript, Python, Rust, Markdown, and edge cases (CJK, emoji, tabs, long words)
+- Selection semantics: empty cursor expands to paragraph (plaintext/markdown) or wraps entire comment region (code); selections wrap only selected lines; multiple cursors processed independently with deduplication
+- No-op preservation: wrapping already-wrapped text produces zero changes; CRLF line endings preserved; trailing newlines neither added nor removed
 
 ## 0.0.1
 
