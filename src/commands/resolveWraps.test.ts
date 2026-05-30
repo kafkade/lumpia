@@ -556,3 +556,139 @@ describe("expandToParagraph", () => {
     });
   });
 });
+
+// ── wholeComment setting (issue #57) ─────────────────────────────────
+
+describe("resolveWraps — wholeComment: false", () => {
+  it("wraps only the paragraph within a multi-paragraph line comment", () => {
+    const doc = makeDoc(
+      [
+        "// First paragraph of the comment that is long enough to need wrapping at this column width",
+        "//",
+        "// Second paragraph of the comment that is also long enough to need wrapping here",
+        "const x = 1;",
+      ].join("\n")
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(0)], {
+      column: 40,
+      wholeComment: false,
+    });
+    expect(edits).toHaveLength(1);
+    expect(edits[0].startLine).toBe(0);
+    expect(edits[0].endLine).toBe(0);
+  });
+
+  it("wraps second paragraph when cursor is there", () => {
+    const doc = makeDoc(
+      [
+        "// First paragraph short.",
+        "//",
+        "// Second paragraph of the comment that is long enough to need wrapping at this column width",
+        "const x = 1;",
+      ].join("\n")
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(2)], {
+      column: 40,
+      wholeComment: false,
+    });
+    expect(edits).toHaveLength(1);
+    expect(edits[0].startLine).toBe(2);
+    expect(edits[0].endLine).toBe(2);
+  });
+
+  it("no-op when cursor is on blank comment line", () => {
+    const doc = makeDoc(
+      [
+        "// First paragraph.",
+        "//",
+        "// Second paragraph.",
+      ].join("\n")
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(1)], {
+      column: 40,
+      wholeComment: false,
+    });
+    expect(edits).toHaveLength(0);
+  });
+
+  it("wraps paragraph within a block comment", () => {
+    const doc = makeDoc(
+      [
+        "/**",
+        " * First paragraph of the block comment that is long enough to need wrapping at this width",
+        " *",
+        " * Second paragraph of the block comment that is also long enough to need wrapping here",
+        " */",
+      ].join("\n")
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(3)], {
+      column: 40,
+      wholeComment: false,
+    });
+    expect(edits).toHaveLength(1);
+    expect(edits[0].startLine).toBe(3);
+    expect(edits[0].endLine).toBe(3);
+    expect(edits[0].replacement).toMatch(/^ \* /);
+  });
+
+  it("selection ignores wholeComment setting", () => {
+    const doc = makeDoc(
+      [
+        "// First paragraph of the comment that is long enough to need wrapping at this column width",
+        "//",
+        "// Second paragraph also long enough to need wrapping at this column width value",
+        "const x = 1;",
+      ].join("\n")
+    );
+
+    // Selection spans both paragraphs — should wrap all selected lines
+    const edits = resolveWraps(doc, [selection(0, 2)], {
+      column: 40,
+      wholeComment: false,
+    });
+    expect(edits).toHaveLength(1);
+    // The edit should cover lines 0-2 (the entire comment content range)
+    expect(edits[0].startLine).toBe(0);
+    expect(edits[0].endLine).toBe(2);
+  });
+
+  it("wholeComment: true (default) wraps entire comment", () => {
+    const doc = makeDoc(
+      [
+        "// First paragraph of the comment that is long enough to need wrapping at this column width",
+        "//",
+        "// Second paragraph also long enough to need wrapping at this column width value",
+        "const x = 1;",
+      ].join("\n")
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(0)], {
+      column: 40,
+      wholeComment: true,
+    });
+    expect(edits).toHaveLength(1);
+    // Should wrap the full comment region (lines 0-2)
+    expect(edits[0].startLine).toBe(0);
+    expect(edits[0].endLine).toBe(2);
+  });
+
+  it("defaults to wholeComment: true when not specified", () => {
+    const doc = makeDoc(
+      [
+        "// First paragraph of the comment that is long enough to need wrapping at this column width",
+        "//",
+        "// Second paragraph also long enough to need wrapping at this column width value",
+        "const x = 1;",
+      ].join("\n")
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(0)], { column: 40 });
+    expect(edits).toHaveLength(1);
+    expect(edits[0].startLine).toBe(0);
+    expect(edits[0].endLine).toBe(2);
+  });
+});

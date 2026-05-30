@@ -7,6 +7,8 @@ import {
 import {
   resolveColumn,
   parseRulers,
+  RulerCycleState,
+  UNWRAP_COLUMN,
   type ColumnConfig,
 } from "../config/resolveColumn";
 import type { DocumentLike, TextRange } from "../parser/types";
@@ -77,6 +79,10 @@ async function applyWraps(
   });
 }
 
+// ── Per-session ruler cycling state ──────────────────────────────────
+
+const rulerCycleState = new RulerCycleState();
+
 // ── Commands ─────────────────────────────────────────────────────────
 
 export async function roll(): Promise<void> {
@@ -88,18 +94,43 @@ export async function roll(): Promise<void> {
   const editorConfig = vscode.workspace.getConfiguration("editor", document);
 
   const inspection = lumpiaConfig.inspect<number>("column");
+  const rulers = parseRulers(editorConfig.get<unknown[]>("rulers"));
+
   const columnConfig: ColumnConfig = {
     languageColumn: inspection?.languageValue,
     globalColumn: inspection?.workspaceValue ?? inspection?.globalValue,
-    rulers: parseRulers(editorConfig.get<unknown[]>("rulers")),
+    rulers,
     wordWrapColumn: editorConfig.get<number>("wordWrapColumn"),
   };
+
+  // Cycle through rulers when lumpia.column is not explicitly configured
+  const hasLumpiaColumn =
+    inspection?.languageValue !== undefined ||
+    (inspection?.workspaceValue ?? inspection?.globalValue) !== undefined;
+
+  if (!hasLumpiaColumn && rulers.length > 0) {
+    const docKey = document.uri.toString();
+    columnConfig.rulerCycleValue = rulerCycleState.next(docKey, rulers);
+  }
 
   const column = resolveColumn(columnConfig);
   const tabWidth = editorConfig.get<number>("tabSize", 4);
   const reformat = lumpiaConfig.get<boolean>("reformat", false);
+  const wholeComment = lumpiaConfig.get<boolean>("wholeComment", true);
 
-  await applyWraps(editor, { column, tabWidth, reformat });
+  await applyWraps(editor, { column, tabWidth, reformat, wholeComment });
+
+  // Show status bar feedback when cycling
+  if (columnConfig.rulerCycleValue !== undefined) {
+    const docKey = document.uri.toString();
+    const idx = rulerCycleState.currentIndex(docKey)!;
+    const label =
+      column === UNWRAP_COLUMN ? "unwrap" : `column ${column}`;
+    vscode.window.setStatusBarMessage(
+      `Lumpia: ${label} (ruler ${idx + 1}/${rulers.length})`,
+      3000
+    );
+  }
 }
 
 export async function rollAtColumn(): Promise<void> {
@@ -126,6 +157,7 @@ export async function rollAtColumn(): Promise<void> {
   const tabWidth = editorConfig.get<number>("tabSize", 4);
   const lumpiaConfig = vscode.workspace.getConfiguration("lumpia", document);
   const reformat = lumpiaConfig.get<boolean>("reformat", false);
+  const wholeComment = lumpiaConfig.get<boolean>("wholeComment", true);
 
-  await applyWraps(editor, { column, tabWidth, reformat });
+  await applyWraps(editor, { column, tabWidth, reformat, wholeComment });
 }

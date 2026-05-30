@@ -5,6 +5,9 @@
  * with a clear, documented precedence chain.
  */
 
+/** Sentinel column value for unwrap mode (ruler 0). */
+export const UNWRAP_COLUMN = 1_000_000;
+
 /** Abstraction of the configuration sources for testability. */
 export interface ColumnConfig {
   /** Column from an explicit command argument (e.g. lumpia.rollAtColumn prompt). */
@@ -36,8 +39,8 @@ export function resolveColumn(config: ColumnConfig): number {
   if (config.explicitArg !== undefined && config.explicitArg > 0) {
     return config.explicitArg;
   }
-  if (config.rulerCycleValue !== undefined && config.rulerCycleValue > 0) {
-    return config.rulerCycleValue;
+  if (config.rulerCycleValue !== undefined && config.rulerCycleValue >= 0) {
+    return config.rulerCycleValue === 0 ? UNWRAP_COLUMN : config.rulerCycleValue;
   }
   if (config.languageColumn !== undefined && config.languageColumn > 0) {
     return config.languageColumn;
@@ -79,6 +82,11 @@ export class RulerCycleState {
     const index = this.state.get(documentKey);
     if (index === undefined) return undefined;
     return rulers[index % rulers.length];
+  }
+
+  /** Get the current cycling index (0-based), or undefined if not yet cycled. */
+  currentIndex(documentKey: string): number | undefined {
+    return this.state.get(documentKey);
   }
 
   /** Reset cycling state for a document. */

@@ -58,6 +58,11 @@
           "type": "boolean",
           "default": false,
           "description": "Normalize comment prefix spacing to a single space after the marker."
+        },
+        "lumpia.wholeComment": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, an empty cursor wraps the entire comment block. When false, wraps only the paragraph the cursor is in."
         }
       }
     }

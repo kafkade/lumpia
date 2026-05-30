@@ -16,6 +16,7 @@
 
 import type { DocumentLike, WrappableRegion } from "../parser/types";
 import { RegexRegionProvider } from "../parser/regexProvider";
+import { prefixToString } from "../parser/prefix";
 import { wrapRegion, rollText, type WrapOptions } from "../engine/wrapper";
 
 // ── Public types ─────────────────────────────────────────────────────
@@ -37,6 +38,8 @@ export interface WrapContext {
   column: number;
   tabWidth?: number;
   reformat?: boolean;
+  /** When true (default), empty cursor wraps full comment; when false, wraps only the paragraph within the comment. */
+  wholeComment?: boolean;
 }
 
 // ── Main entry point ─────────────────────────────────────────────────
@@ -48,7 +51,7 @@ export function resolveWraps(
   selections: SelectionInfo[],
   context: WrapContext
 ): WrapEdit[] {
-  const { column, tabWidth = 4, reformat = false } = context;
+  const { column, tabWidth = 4, reformat = false, wholeComment = true } = context;
   const wrapOpts: WrapOptions = { tabWidth };
   const isPlaintext = PLAINTEXT_LANGUAGES.has(document.languageId);
 
@@ -75,6 +78,7 @@ export function resolveWraps(
         allRegions!,
         column,
         reformat,
+        wholeComment,
         wrapOpts,
         edits
       );
@@ -121,6 +125,7 @@ function resolveCode(
   allRegions: WrappableRegion[],
   column: number,
   reformat: boolean,
+  wholeComment: boolean,
   wrapOpts: WrapOptions,
   edits: WrapEdit[]
 ): void {
@@ -133,7 +138,18 @@ function resolveCode(
     );
     if (!region) return; // Cursor on code line → no-op
 
-    wrapFullRegion(document, region, column, reformat, wrapOpts, edits);
+    if (wholeComment) {
+      wrapFullRegion(document, region, column, reformat, wrapOpts, edits);
+    } else {
+      // Wrap only the paragraph within the comment
+      const para = findParagraphInRegion(document, region, sel.activeLine);
+      if (!para) return; // Cursor on blank comment line → no-op
+      const clipped: WrappableRegion = {
+        ...region,
+        contentRange: { startLine: para.startLine, endLine: para.endLine },
+      };
+      wrapFullRegion(document, clipped, column, reformat, wrapOpts, edits);
+    }
   } else {
     // Find all regions overlapping the selection
     const overlapping = allRegions.filter(
@@ -230,4 +246,46 @@ function deduplicateEdits(edits: WrapEdit[]): WrapEdit[] {
     seen.add(key);
     return true;
   });
+}
+
+/**
+ * Find the paragraph containing `cursorLine` within a comment region.
+ * Paragraphs are separated by blank comment lines (lines whose content
+ * after stripping the prefix is empty/whitespace).
+ */
+function findParagraphInRegion(
+  document: DocumentLike,
+  region: WrappableRegion,
+  cursorLine: number
+): { startLine: number; endLine: number } | undefined {
+  const prefix = prefixToString(region.prefix);
+  const { startLine: rangeStart, endLine: rangeEnd } = region.contentRange;
+
+  if (cursorLine < rangeStart || cursorLine > rangeEnd) return undefined;
+
+  const contentAfterPrefix = (line: number): string => {
+    const raw = document.lineAt(line);
+    if (raw.startsWith(prefix)) return raw.slice(prefix.length);
+    // Blank comment lines may omit trailing spacing (e.g. "//" instead of "// ")
+    const markerOnly = region.prefix.indent + region.prefix.marker;
+    if (raw.startsWith(markerOnly)) return raw.slice(markerOnly.length);
+    return raw;
+  };
+
+  // Cursor on blank comment line → no-op
+  if (contentAfterPrefix(cursorLine).trim() === "") return undefined;
+
+  // Expand upward
+  let start = cursorLine;
+  while (start > rangeStart && contentAfterPrefix(start - 1).trim() !== "") {
+    start--;
+  }
+
+  // Expand downward
+  let end = cursorLine;
+  while (end < rangeEnd && contentAfterPrefix(end + 1).trim() !== "") {
+    end++;
+  }
+
+  return { startLine: start, endLine: end };
 }

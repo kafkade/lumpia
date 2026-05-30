@@ -3,6 +3,7 @@ import {
   resolveColumn,
   RulerCycleState,
   parseRulers,
+  UNWRAP_COLUMN,
 } from "./resolveColumn";
 
 // ── resolveColumn ────────────────────────────────────────────────────
@@ -87,6 +88,20 @@ describe("resolveColumn", () => {
   it("ignores zero ruler value", () => {
     expect(resolveColumn({ rulers: [0], wordWrapColumn: 90 })).toBe(90);
   });
+
+  it("returns UNWRAP_COLUMN for rulerCycleValue of 0", () => {
+    expect(resolveColumn({ rulerCycleValue: 0 })).toBe(UNWRAP_COLUMN);
+  });
+
+  it("rulerCycleValue 0 takes precedence over language/global column", () => {
+    expect(
+      resolveColumn({
+        rulerCycleValue: 0,
+        languageColumn: 79,
+        globalColumn: 80,
+      })
+    ).toBe(UNWRAP_COLUMN);
+  });
 });
 
 // ── RulerCycleState ──────────────────────────────────────────────────
@@ -145,6 +160,37 @@ describe("RulerCycleState", () => {
     state.clear();
     expect(state.current("doc1", [72, 80])).toBeUndefined();
     expect(state.current("doc2", [72, 80])).toBeUndefined();
+  });
+
+  it("currentIndex returns undefined before cycling", () => {
+    const state = new RulerCycleState();
+    expect(state.currentIndex("doc1")).toBeUndefined();
+  });
+
+  it("currentIndex returns 0-based index after cycling", () => {
+    const state = new RulerCycleState();
+    const rulers = [72, 80, 100];
+
+    state.next("doc1", rulers);
+    expect(state.currentIndex("doc1")).toBe(0);
+
+    state.next("doc1", rulers);
+    expect(state.currentIndex("doc1")).toBe(1);
+
+    state.next("doc1", rulers);
+    expect(state.currentIndex("doc1")).toBe(2);
+
+    state.next("doc1", rulers); // wraps
+    expect(state.currentIndex("doc1")).toBe(0);
+  });
+
+  it("cycles through ruler 0 for unwrap", () => {
+    const state = new RulerCycleState();
+    const rulers = [80, 0];
+
+    expect(state.next("doc1", rulers)).toBe(80);
+    expect(state.next("doc1", rulers)).toBe(0); // unwrap
+    expect(state.next("doc1", rulers)).toBe(80); // back to 80
   });
 });
 
