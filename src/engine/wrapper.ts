@@ -20,8 +20,15 @@ export function rollText(
   options: WrapOptions = {}
 ): string {
   const { tabWidth = 4 } = options;
-  const blocks = parseContentBlocks(text);
-  return blocks.map((b) => wrapBlock(b, column, tabWidth)).join("\n");
+
+  // Detect and normalize CRLF line endings
+  const hasCRLF = text.includes("\r\n");
+  const normalized = hasCRLF ? text.replace(/\r\n/g, "\n") : text;
+
+  const blocks = parseContentBlocks(normalized);
+  const result = blocks.map((b) => wrapBlock(b, column, tabWidth)).join("\n");
+
+  return hasCRLF ? result.replace(/\n/g, "\r\n") : result;
 }
 
 /**

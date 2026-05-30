@@ -52,4 +52,86 @@ describe("rollText", () => {
       "short\n\nthis is a longer\nparagraph that\nshould wrap around"
     );
   });
+
+  // ── No-op preservation (issue #55) ─────────────────────────────────
+
+  describe("no-op preservation", () => {
+    it("returns identical string for already-wrapped paragraph", () => {
+      const input = "hello world foo bar\nbaz qux quux corge\ngrault";
+      expect(rollText(input, 20)).toBe(input);
+    });
+
+    it("returns identical string for short line under column width", () => {
+      const input = "short line";
+      expect(rollText(input, 80)).toBe(input);
+    });
+
+    it("returns identical string for multi-paragraph already-wrapped text", () => {
+      const input = "first para\nshort line\n\nsecond para\nalso short";
+      expect(rollText(input, 15)).toBe(input);
+    });
+
+    it("is idempotent: rollText(rollText(x)) === rollText(x)", () => {
+      const inputs = [
+        "one two three four five six seven eight nine ten",
+        "short\n\nthis is a longer paragraph that should wrap around",
+        "- list item with enough words to wrap around the column boundary",
+        "# Heading\n\nParagraph text that is long enough.",
+        "> quoted text that is long enough to need wrapping at width",
+        "```\ncode\n```\n\nParagraph after fence.",
+      ];
+      for (const input of inputs) {
+        const once = rollText(input, 25);
+        const twice = rollText(once, 25);
+        expect(twice).toBe(once);
+      }
+    });
+
+    it("preserves trailing newline", () => {
+      const withNewline = "hello\n";
+      expect(rollText(withNewline, 80)).toBe("hello\n");
+    });
+
+    it("does not add trailing newline", () => {
+      const noNewline = "hello";
+      expect(rollText(noNewline, 80)).toBe("hello");
+    });
+
+    it("preserves blank line between paragraphs on re-wrap", () => {
+      const input = "alpha\n\nbeta";
+      expect(rollText(input, 80)).toBe("alpha\n\nbeta");
+    });
+  });
+
+  // ── CRLF preservation (issue #55) ──────────────────────────────────
+
+  describe("CRLF preservation", () => {
+    it("preserves CRLF line endings after wrapping", () => {
+      const input = "one two three four five six\r\nseven eight nine ten";
+      const result = rollText(input, 20);
+      // No bare LF — all newlines should be CRLF
+      expect(result.replace(/\r\n/g, "")).not.toContain("\n");
+      expect(result).toContain("\r\n");
+      for (const line of result.split("\r\n")) {
+        expect(line.length).toBeLessThanOrEqual(20);
+      }
+    });
+
+    it("returns identical CRLF string for already-wrapped input", () => {
+      const input = "short line\r\n\r\nsecond para";
+      expect(rollText(input, 80)).toBe(input);
+    });
+
+    it("preserves LF when no CRLF present", () => {
+      const input = "first\nsecond\nthird";
+      const result = rollText(input, 80);
+      expect(result).toBe("first second third");
+      expect(result).not.toContain("\r");
+    });
+
+    it("preserves CRLF trailing newline", () => {
+      const input = "hello\r\n";
+      expect(rollText(input, 80)).toBe("hello\r\n");
+    });
+  });
 });

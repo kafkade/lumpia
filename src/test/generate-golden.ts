@@ -554,6 +554,36 @@ const fixtures: FixtureDef[] = [
   },
   {
     category: "edge-cases",
+    name: "noop-already-wrapped",
+    column: 20,
+    input: "hello world foo bar\nbaz qux quux corge\ngrault",
+  },
+  {
+    category: "edge-cases",
+    name: "noop-multi-paragraph",
+    column: 40,
+    input: "First short paragraph.\n\nSecond short paragraph.",
+  },
+  {
+    category: "edge-cases",
+    name: "noop-list-wrapped",
+    column: 30,
+    input: "- Item one fits here.\n- Item two as well.",
+  },
+  {
+    category: "edge-cases",
+    name: "noop-heading-and-text",
+    column: 40,
+    input: "# Title\n\nShort paragraph.",
+  },
+  {
+    category: "edge-cases",
+    name: "noop-code-fence",
+    column: 30,
+    input: "```\nvar x = 1;\n```",
+  },
+  {
+    category: "edge-cases",
     name: "consecutive-blanks",
     column: 40,
     input: "First paragraph here.\n\n\n\nSecond paragraph here.",
