@@ -18,6 +18,8 @@
 - Golden test harness with 52 fixture pairs across TypeScript, Python, Rust, Markdown, and edge cases (CJK, emoji, tabs, long words)
 - Selection semantics: empty cursor expands to paragraph (plaintext/markdown) or wraps entire comment region (code); selections wrap only selected lines; multiple cursors processed independently with deduplication
 - No-op preservation: wrapping already-wrapped text produces zero changes; CRLF line endings preserved; trailing newlines neither added nor removed
+- Ruler cycling: repeated `Alt+R` cycles through `editor.rulers` values; ruler `0` triggers unwrap; per-document session memory; status bar shows active ruler
+- `lumpia.wholeComment` setting: when `false`, empty cursor wraps only the current paragraph within a comment instead of the entire block; selections always override
 
 ## 0.0.1
 
