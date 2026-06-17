@@ -1,0 +1,11 @@
+Parses a configuration file from the given path.
+
+# Examples
+
+```rust
+let config = Config::from_file("app.toml")?;
+assert_eq!(config.port, 8080);
+```
+
+Returns an error if the file does not exist or contains
+invalid TOML syntax.

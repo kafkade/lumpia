@@ -1,0 +1,2 @@
+Creates a new instance of the connection pool with the
+specified maximum number of connections and timeout duration

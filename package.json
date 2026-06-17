@@ -33,6 +33,10 @@
       {
         "command": "lumpia.roll",
         "title": "Lumpia: Roll Text"
+      },
+      {
+        "command": "lumpia.rollAtColumn",
+        "title": "Lumpia: Roll Text at Column..."
       }
     ],
     "keybindings": [
@@ -49,6 +53,16 @@
           "type": "number",
           "default": 80,
           "description": "The column at which to roll text."
+        },
+        "lumpia.reformat": {
+          "type": "boolean",
+          "default": false,
+          "description": "Normalize comment prefix spacing to a single space after the marker."
+        },
+        "lumpia.wholeComment": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, an empty cursor wraps the entire comment block. When false, wraps only the paragraph the cursor is in."
         }
       }
     }
@@ -66,13 +80,14 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.9.3",
     "@types/vscode": "^1.115.0",
-    "@vscode/vsce": "^3.2.0",
-    "esbuild": "^0.28.0",
-    "eslint": "^10.0.3",
-    "typescript": "^6.0.2",
-    "typescript-eslint": "^8.0.0",
-    "vitest": "^4.1.0"
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.5.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1",
+    "vitest": "^4.1.9"
   }
 }

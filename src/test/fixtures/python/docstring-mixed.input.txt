@@ -1,0 +1,8 @@
+Calculate the moving average of a time series.
+
+Uses a sliding window approach with configurable
+window size and optional weighting.
+
+@param data The input time series data points
+@param window_size Size of the sliding window
+@returns List of computed moving average values

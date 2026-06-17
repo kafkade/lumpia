@@ -1,0 +1,13 @@
+Compute the cross-correlation between two signals.
+
+Parameters
+----------
+signal_a : array_like
+    The first input signal for cross-correlation analysis
+signal_b : array_like
+    The second input signal for cross-correlation analysis
+
+Returns
+-------
+result : ndarray
+    The cross-correlation result array with normalized values

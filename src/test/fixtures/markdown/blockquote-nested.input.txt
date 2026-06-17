@@ -1,0 +1,4 @@
+> Outer quote with some text here.
+> More outer text continues.
+
+> > Inner nested quote with additional text that is longer than the column width

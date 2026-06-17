@@ -1,0 +1,6 @@
+Creates a personalized greeting message for the user. The
+message includes the current time and locale info.
+
+@param name The user's full name as entered in the form
+@param locale The locale string for date formatting
+@returns The formatted greeting string
