@@ -83,6 +83,24 @@ async function applyWraps(
 
 const rulerCycleState = new RulerCycleState();
 
+// ── Shared formatting config ─────────────────────────────────────────
+
+interface FormatConfig {
+  tabWidth: number;
+  reformat: boolean;
+  wholeComment: boolean;
+}
+
+function readFormatConfig(document: vscode.TextDocument): FormatConfig {
+  const lumpiaConfig = vscode.workspace.getConfiguration("lumpia", document);
+  const editorConfig = vscode.workspace.getConfiguration("editor", document);
+  return {
+    tabWidth: editorConfig.get<number>("tabSize", 4),
+    reformat: lumpiaConfig.get<boolean>("reformat", false),
+    wholeComment: lumpiaConfig.get<boolean>("wholeComment", true),
+  };
+}
+
 // ── Commands ─────────────────────────────────────────────────────────
 
 export async function roll(): Promise<void> {
@@ -114,9 +132,7 @@ export async function roll(): Promise<void> {
   }
 
   const column = resolveColumn(columnConfig);
-  const tabWidth = editorConfig.get<number>("tabSize", 4);
-  const reformat = lumpiaConfig.get<boolean>("reformat", false);
-  const wholeComment = lumpiaConfig.get<boolean>("wholeComment", true);
+  const { tabWidth, reformat, wholeComment } = readFormatConfig(document);
 
   await applyWraps(editor, { column, tabWidth, reformat, wholeComment });
 
@@ -138,26 +154,38 @@ export async function rollAtColumn(): Promise<void> {
   if (!editor) return;
 
   const input = await vscode.window.showInputBox({
-    prompt: "Enter column width for wrapping",
+    prompt: "Enter column width for wrapping (leave empty to unwrap)",
     placeHolder: "80",
     validateInput: (value) => {
+      if (value.trim() === "") return null;
       const num = parseInt(value, 10);
       if (isNaN(num) || num < 1) {
-        return "Enter a positive integer";
+        return "Enter a positive integer, or leave empty to unwrap";
       }
       return null;
     },
   });
 
-  if (!input) return;
+  // Distinguish a cancelled input box (undefined) from an empty submission ("").
+  if (input === undefined) return;
 
   const { document } = editor;
-  const column = parseInt(input, 10);
-  const editorConfig = vscode.workspace.getConfiguration("editor", document);
-  const tabWidth = editorConfig.get<number>("tabSize", 4);
-  const lumpiaConfig = vscode.workspace.getConfiguration("lumpia", document);
-  const reformat = lumpiaConfig.get<boolean>("reformat", false);
-  const wholeComment = lumpiaConfig.get<boolean>("wholeComment", true);
+  const column = input.trim() === "" ? UNWRAP_COLUMN : parseInt(input, 10);
+  const { tabWidth, reformat, wholeComment } = readFormatConfig(document);
 
   await applyWraps(editor, { column, tabWidth, reformat, wholeComment });
+}
+
+export async function unwrap(): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return;
+
+  const { tabWidth, reformat, wholeComment } = readFormatConfig(editor.document);
+
+  await applyWraps(editor, {
+    column: UNWRAP_COLUMN,
+    tabWidth,
+    reformat,
+    wholeComment,
+  });
 }
