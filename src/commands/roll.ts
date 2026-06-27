@@ -12,6 +12,7 @@ import {
   type ColumnConfig,
 } from "../config/resolveColumn";
 import type { DocumentLike, TextRange } from "../parser/types";
+import { validateColumnInput, parseColumnInput } from "./columnInput";
 
 // ── VS Code adapters ─────────────────────────────────────────────────
 
@@ -156,21 +157,14 @@ export async function rollAtColumn(): Promise<void> {
   const input = await vscode.window.showInputBox({
     prompt: "Enter column width for wrapping (leave empty to unwrap)",
     placeHolder: "80",
-    validateInput: (value) => {
-      if (value.trim() === "") return null;
-      const num = parseInt(value, 10);
-      if (isNaN(num) || num < 1) {
-        return "Enter a positive integer, or leave empty to unwrap";
-      }
-      return null;
-    },
+    validateInput: validateColumnInput,
   });
 
   // Distinguish a cancelled input box (undefined) from an empty submission ("").
   if (input === undefined) return;
 
   const { document } = editor;
-  const column = input.trim() === "" ? UNWRAP_COLUMN : parseInt(input, 10);
+  const column = parseColumnInput(input);
   const { tabWidth, reformat, wholeComment } = readFormatConfig(document);
 
   await applyWraps(editor, { column, tabWidth, reformat, wholeComment });
