@@ -37,6 +37,10 @@
       {
         "command": "lumpia.rollAtColumn",
         "title": "Lumpia: Roll Text at Column..."
+      },
+      {
+        "command": "lumpia.unwrap",
+        "title": "Lumpia: Unwrap Text"
       }
     ],
     "keybindings": [

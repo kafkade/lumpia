@@ -5,6 +5,7 @@ import {
   type SelectionInfo,
 } from "./resolveWraps";
 import type { DocumentLike, TextRange } from "../parser/types";
+import { UNWRAP_COLUMN } from "../config/resolveColumn";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -690,5 +691,97 @@ describe("resolveWraps — wholeComment: false", () => {
     expect(edits).toHaveLength(1);
     expect(edits[0].startLine).toBe(0);
     expect(edits[0].endLine).toBe(2);
+  });
+});
+
+// ── Unwrap (UNWRAP_COLUMN) ───────────────────────────────────────────
+
+describe("resolveWraps — unwrap via UNWRAP_COLUMN", () => {
+  it("joins a wrapped line comment into a single line", () => {
+    const doc = makeDoc(
+      [
+        "// This is a comment that has",
+        "// been hard wrapped across",
+        "// several short lines",
+        "const x = 1;",
+      ].join("\n")
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(0)], {
+      column: UNWRAP_COLUMN,
+    });
+    expect(edits).toHaveLength(1);
+    expect(edits[0].startLine).toBe(0);
+    expect(edits[0].endLine).toBe(2);
+    expect(edits[0].replacement).toBe(
+      "// This is a comment that has been hard wrapped across several short lines"
+    );
+  });
+
+  it("preserves paragraph boundaries when unwrapping", () => {
+    const doc = makeDoc(
+      [
+        "// First paragraph spread",
+        "// over two lines",
+        "// ",
+        "// Second paragraph also",
+        "// spread over two lines",
+        "const x = 1;",
+      ].join("\n")
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(0)], {
+      column: UNWRAP_COLUMN,
+    });
+    expect(edits).toHaveLength(1);
+    expect(edits[0].replacement).toBe(
+      [
+        "// First paragraph spread over two lines",
+        "//",
+        "// Second paragraph also spread over two lines",
+      ].join("\n")
+    );
+  });
+
+  it("unwraps plaintext paragraphs while keeping blank-line boundaries", () => {
+    const doc = makeDoc(
+      [
+        "This is a plaintext",
+        "paragraph wrapped short.",
+        "",
+        "Another paragraph that",
+        "is also wrapped short.",
+      ].join("\n"),
+      "plaintext"
+    );
+
+    const edits = resolveWraps(doc, [selection(0, 4)], {
+      column: UNWRAP_COLUMN,
+    });
+    expect(edits).toHaveLength(1);
+    expect(edits[0].replacement).toBe(
+      [
+        "This is a plaintext paragraph wrapped short.",
+        "",
+        "Another paragraph that is also wrapped short.",
+      ].join("\n")
+    );
+  });
+
+  it("re-applies the comment prefix after unwrapping", () => {
+    const doc = makeDoc(
+      [
+        "  # a python comment",
+        "  # split over lines",
+        "x = 1",
+      ].join("\n"),
+      "python"
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(0)], {
+      column: UNWRAP_COLUMN,
+    });
+    expect(edits).toHaveLength(1);
+    expect(edits[0].replacement).toBe("  # a python comment split over lines");
   });
 });
