@@ -1,0 +1,3 @@
+Read the next token
+from the input stream and
+advance the cursor past any trailing whitespace characters

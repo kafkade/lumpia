@@ -1,0 +1,3 @@
+Move the underlying resource into the
+new owner and leave the moved-from
+object in a valid but unspecified state

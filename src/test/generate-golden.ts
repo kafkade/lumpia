@@ -803,6 +803,104 @@ const fixtures: FixtureDef[] = [
     column: 40,
     input: "First paragraph here.\n\n\n\nSecond paragraph here.",
   },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // c/ — inner content from C comments and Doxygen doc comments
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "c",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Allocate a zero-initialized buffer on the heap and return an owning pointer to the caller",
+  },
+  {
+    category: "c",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "Read the next token\nfrom the input stream and\nadvance the cursor past any trailing whitespace characters",
+  },
+  {
+    category: "c",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "This module implements a fixed-capacity ring buffer.",
+      "Push and pop operations run in constant time and never",
+      "allocate. The capacity must be a power of two so the",
+      "index wrap can be computed with a bitwise mask.",
+    ].join("\n"),
+  },
+  {
+    category: "c",
+    name: "doxygen-doc",
+    column: 60,
+    input: [
+      "Copy at most n bytes from src into dst.",
+      "",
+      "@param dst Destination buffer that must be large enough to hold the copied bytes plus a terminator",
+      "@param src Null-terminated source string to copy characters from",
+      "@param n Maximum number of bytes to write into the destination buffer",
+      "@return Pointer to the destination buffer dst for call chaining",
+    ].join("\n"),
+  },
+  {
+    category: "c",
+    name: "already-wrapped",
+    column: 80,
+    input:
+      "Frees the allocator and all memory it owns.\nThe handle must not be used afterwards.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // cpp/ — inner content from C++ comments and Doxygen doc comments
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "cpp",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Construct the widget in place and register it with the parent container before the first paint",
+  },
+  {
+    category: "cpp",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "Move the underlying resource\ninto the new owner and\nleave the moved-from object in a valid but unspecified state",
+  },
+  {
+    category: "cpp",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "A small RAII wrapper around a native file handle.",
+      "The handle is opened in the constructor and closed",
+      "automatically when the object goes out of scope, so",
+      "callers never need to close it explicitly.",
+    ].join("\n"),
+  },
+  {
+    category: "cpp",
+    name: "doxygen-doc",
+    column: 60,
+    input: [
+      "Insert a value into the map, overwriting any existing entry.",
+      "",
+      "@tparam T The element type stored in the container, which must be copy or move constructible",
+      "@param key The lookup key used to locate the slot for the value",
+      "@param value The value to store, forwarded into the container",
+      "@return A reference to the inserted or updated element",
+    ].join("\n"),
+  },
+  {
+    category: "cpp",
+    name: "already-wrapped",
+    column: 80,
+    input:
+      "Returns the number of elements currently stored.\nThis call never throws.",
+  },
 ];
 
 // ── Generate ─────────────────────────────────────────────────────────

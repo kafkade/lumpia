@@ -1,0 +1,4 @@
+This module implements a fixed-capacity ring buffer. Push
+and pop operations run in constant time and never allocate.
+The capacity must be a power of two so the index wrap can be
+computed with a bitwise mask.

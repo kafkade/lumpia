@@ -1,0 +1,1 @@
+Construct the widget in place and register it with the parent container before the first paint

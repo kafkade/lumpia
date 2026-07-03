@@ -1,0 +1,2 @@
+Frees the allocator and all memory it owns.
+The handle must not be used afterwards.
