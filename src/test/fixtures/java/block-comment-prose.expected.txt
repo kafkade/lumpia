@@ -1,0 +1,4 @@
+This class provides thread-safe utilities for parsing dates.
+All methods are static and can be called without an
+instance. Instances of the formatter are cached per locale
+for performance.

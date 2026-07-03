@@ -1,0 +1,4 @@
+Validates the incoming request and
+normalizes the header values before
+dispatching it to the matching route
+handler

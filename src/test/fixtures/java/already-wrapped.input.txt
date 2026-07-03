@@ -1,0 +1,2 @@
+Parses the configuration file and
+returns the resulting settings object.
