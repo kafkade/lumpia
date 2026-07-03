@@ -56,16 +56,19 @@
         "lumpia.column": {
           "type": "number",
           "default": 80,
+          "scope": "language-overridable",
           "description": "The column at which to roll text."
         },
         "lumpia.reformat": {
           "type": "boolean",
           "default": false,
+          "scope": "language-overridable",
           "description": "Normalize comment prefix spacing to a single space after the marker."
         },
         "lumpia.wholeComment": {
           "type": "boolean",
           "default": true,
+          "scope": "language-overridable",
           "description": "When true, an empty cursor wraps the entire comment block. When false, wraps only the paragraph the cursor is in."
         }
       }

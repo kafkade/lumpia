@@ -21,6 +21,7 @@
 - No-op preservation: wrapping already-wrapped text produces zero changes; CRLF line endings preserved; trailing newlines neither added nor removed
 - Ruler cycling: repeated `Alt+R` cycles through `editor.rulers` values; ruler `0` triggers unwrap; per-document session memory; status bar shows active ruler
 - `lumpia.wholeComment` setting: when `false`, empty cursor wraps only the current paragraph within a comment instead of the entire block; selections always override
+- Per-language settings support: `lumpia.column`, `lumpia.reformat`, and `lumpia.wholeComment` now honor VS Code's native `[language]` override sections (declared with `language-overridable` scope), so language-specific values take precedence over the global setting
 
 ## 0.0.1
 

@@ -12,9 +12,30 @@ Unlike your editor's soft wrap, Lumpia actually reshapes your text by inserting 
 
 ## Configuration
 
-| Setting         | Default | Description                       |
-| --------------- | ------- | --------------------------------- |
-| `lumpia.column` | `80`    | The column at which to roll text. |
+| Setting               | Default | Description                                                                                                  |
+| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
+| `lumpia.column`       | `80`    | The column at which to roll text.                                                                            |
+| `lumpia.reformat`     | `false` | Normalize comment prefix spacing to a single space after the marker.                                         |
+| `lumpia.wholeComment` | `true`  | When `true`, an empty cursor wraps the entire comment block; when `false`, wraps only the current paragraph. |
+
+### Per-language settings
+
+Every Lumpia setting supports VS Code's native `[language]` overrides, so you
+can tune wrapping per language. Language-specific values take precedence over
+the global value:
+
+```jsonc
+{
+  "lumpia.column": 80,
+  "[python]": {
+    "lumpia.column": 79,
+    "lumpia.reformat": true
+  },
+  "[javascript]": {
+    "lumpia.column": 100
+  }
+}
+```
 
 ## Usage
 
