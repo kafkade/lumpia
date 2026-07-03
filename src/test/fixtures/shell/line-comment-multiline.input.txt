@@ -1,0 +1,3 @@
+This helper function
+checks whether a given
+command exists on the system PATH before running it

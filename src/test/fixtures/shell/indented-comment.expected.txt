@@ -1,0 +1,6 @@
+Run the setup steps below:
+
+    export PATH=$PATH:/opt/tool/bin
+    source ~/.bashrc
+
+Done.

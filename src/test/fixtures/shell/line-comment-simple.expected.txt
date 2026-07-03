@@ -1,0 +1,3 @@
+List all files in the current directory
+including hidden ones and print them in
+long listing format
