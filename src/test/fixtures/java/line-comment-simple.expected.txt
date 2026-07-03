@@ -1,0 +1,3 @@
+Initializes the connection pool and
+eagerly opens the minimum number of
+database connections

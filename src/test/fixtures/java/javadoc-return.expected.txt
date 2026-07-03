@@ -1,0 +1,3 @@
+@return the formatted greeting string containing the user
+            name along with the current server date and time
+            information

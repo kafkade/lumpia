@@ -1,0 +1,10 @@
+Builds a personalized greeting for the given user and
+locale. The greeting includes a localized timestamp when
+available.
+
+@param name the user's full name as entered on the sign-up
+            form
+@param locale the locale used to format the timestamp and
+              message
+@return the fully formatted greeting string ready for
+            display

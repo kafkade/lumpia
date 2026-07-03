@@ -103,6 +103,68 @@ const fixtures: FixtureDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // java/ — inner content from Java comments and Javadoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "java",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Initializes the connection pool and eagerly opens the minimum number of database connections",
+  },
+  {
+    category: "java",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "Validates the incoming request\nand normalizes the header values before dispatching it to the matching route handler",
+  },
+  {
+    category: "java",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "This class provides thread-safe utilities for parsing dates.",
+      "All methods are static and can be called without an instance.",
+      "Instances of the formatter are cached per locale for performance.",
+    ].join("\n"),
+  },
+  {
+    category: "java",
+    name: "javadoc-param",
+    column: 60,
+    input:
+      "@param userName the fully qualified name of the user that will be shown in the greeting and written to the audit log",
+  },
+  {
+    category: "java",
+    name: "javadoc-return",
+    column: 60,
+    input:
+      "@return the formatted greeting string containing the user name along with the current server date and time information",
+  },
+  {
+    category: "java",
+    name: "javadoc-mixed",
+    column: 60,
+    input: [
+      "Builds a personalized greeting for the given user and locale.",
+      "The greeting includes a localized timestamp when available.",
+      "",
+      "@param name the user's full name as entered on the sign-up form",
+      "@param locale the locale used to format the timestamp and message",
+      "@return the fully formatted greeting string ready for display",
+    ].join("\n"),
+  },
+  {
+    category: "java",
+    name: "already-wrapped",
+    column: 40,
+    input:
+      "Parses the configuration file and\nreturns the resulting settings object.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // python/ — inner content from Python comments and docstrings
   // ═══════════════════════════════════════════════════════════════════
   {
