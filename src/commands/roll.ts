@@ -90,6 +90,7 @@ interface FormatConfig {
   tabWidth: number;
   reformat: boolean;
   wholeComment: boolean;
+  doubleSentenceSpacing: boolean;
 }
 
 function readFormatConfig(document: vscode.TextDocument): FormatConfig {
@@ -99,6 +100,10 @@ function readFormatConfig(document: vscode.TextDocument): FormatConfig {
     tabWidth: editorConfig.get<number>("tabSize", 4),
     reformat: lumpiaConfig.get<boolean>("reformat", false),
     wholeComment: lumpiaConfig.get<boolean>("wholeComment", true),
+    doubleSentenceSpacing: lumpiaConfig.get<boolean>(
+      "doubleSentenceSpacing",
+      false
+    ),
   };
 }
 
@@ -133,9 +138,16 @@ export async function roll(): Promise<void> {
   }
 
   const column = resolveColumn(columnConfig);
-  const { tabWidth, reformat, wholeComment } = readFormatConfig(document);
+  const { tabWidth, reformat, wholeComment, doubleSentenceSpacing } =
+    readFormatConfig(document);
 
-  await applyWraps(editor, { column, tabWidth, reformat, wholeComment });
+  await applyWraps(editor, {
+    column,
+    tabWidth,
+    reformat,
+    wholeComment,
+    doubleSentenceSpacing,
+  });
 
   // Show status bar feedback when cycling
   if (columnConfig.rulerCycleValue !== undefined) {
@@ -165,21 +177,30 @@ export async function rollAtColumn(): Promise<void> {
 
   const { document } = editor;
   const column = parseColumnInput(input);
-  const { tabWidth, reformat, wholeComment } = readFormatConfig(document);
+  const { tabWidth, reformat, wholeComment, doubleSentenceSpacing } =
+    readFormatConfig(document);
 
-  await applyWraps(editor, { column, tabWidth, reformat, wholeComment });
+  await applyWraps(editor, {
+    column,
+    tabWidth,
+    reformat,
+    wholeComment,
+    doubleSentenceSpacing,
+  });
 }
 
 export async function unwrap(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
 
-  const { tabWidth, reformat, wholeComment } = readFormatConfig(editor.document);
+  const { tabWidth, reformat, wholeComment, doubleSentenceSpacing } =
+    readFormatConfig(editor.document);
 
   await applyWraps(editor, {
     column: UNWRAP_COLUMN,
     tabWidth,
     reformat,
     wholeComment,
+    doubleSentenceSpacing,
   });
 }

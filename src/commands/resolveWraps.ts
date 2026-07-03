@@ -40,6 +40,8 @@ export interface WrapContext {
   reformat?: boolean;
   /** When true (default), empty cursor wraps full comment; when false, wraps only the paragraph within the comment. */
   wholeComment?: boolean;
+  /** When true, insert two spaces after sentence-ending punctuation. */
+  doubleSentenceSpacing?: boolean;
 }
 
 // ── Main entry point ─────────────────────────────────────────────────
@@ -51,8 +53,14 @@ export function resolveWraps(
   selections: SelectionInfo[],
   context: WrapContext
 ): WrapEdit[] {
-  const { column, tabWidth = 4, reformat = false, wholeComment = true } = context;
-  const wrapOpts: WrapOptions = { tabWidth };
+  const {
+    column,
+    tabWidth = 4,
+    reformat = false,
+    wholeComment = true,
+    doubleSentenceSpacing = false,
+  } = context;
+  const wrapOpts: WrapOptions = { tabWidth, doubleSentenceSpacing };
   const isPlaintext = PLAINTEXT_LANGUAGES.has(document.languageId);
 
   // For code files, detect all comment regions in the document once

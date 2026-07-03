@@ -5,6 +5,7 @@ import { parseContentBlocks, wrapBlock } from "./contentBlocks";
 
 export interface WrapOptions {
   tabWidth?: number;
+  doubleSentenceSpacing?: boolean;
 }
 
 /**
@@ -19,14 +20,16 @@ export function rollText(
   column: number,
   options: WrapOptions = {}
 ): string {
-  const { tabWidth = 4 } = options;
+  const { tabWidth = 4, doubleSentenceSpacing = false } = options;
 
   // Detect and normalize CRLF line endings
   const hasCRLF = text.includes("\r\n");
   const normalized = hasCRLF ? text.replace(/\r\n/g, "\n") : text;
 
   const blocks = parseContentBlocks(normalized);
-  const result = blocks.map((b) => wrapBlock(b, column, tabWidth)).join("\n");
+  const result = blocks
+    .map((b) => wrapBlock(b, column, tabWidth, doubleSentenceSpacing))
+    .join("\n");
 
   return hasCRLF ? result.replace(/\n/g, "\r\n") : result;
 }
@@ -45,7 +48,7 @@ export function wrapRegion(
   reformat = false,
   options: WrapOptions = {}
 ): string {
-  const { tabWidth = 4 } = options;
+  const { tabWidth = 4, doubleSentenceSpacing = false } = options;
   const { contentRange, prefix } = region;
   const inputPrefix = prefixToString(prefix);
   const outputPrefix = prefixToString(
@@ -65,7 +68,10 @@ export function wrapRegion(
   const innerText = lines.join("\n");
   const prefixDisplayWidth = displayWidth(outputPrefix, tabWidth);
   const availableWidth = Math.max(1, column - prefixDisplayWidth);
-  const wrapped = rollText(innerText, availableWidth, { tabWidth });
+  const wrapped = rollText(innerText, availableWidth, {
+    tabWidth,
+    doubleSentenceSpacing,
+  });
 
   // Re-apply the (possibly normalized) prefix to each wrapped line
   return wrapped

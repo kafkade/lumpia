@@ -70,6 +70,12 @@
           "default": true,
           "scope": "language-overridable",
           "description": "When true, an empty cursor wraps the entire comment block. When false, wraps only the paragraph the cursor is in."
+        },
+        "lumpia.doubleSentenceSpacing": {
+          "type": "boolean",
+          "default": false,
+          "scope": "language-overridable",
+          "description": "When true, insert two spaces after sentence-ending punctuation (., ?, !) while wrapping."
         }
       }
     }
