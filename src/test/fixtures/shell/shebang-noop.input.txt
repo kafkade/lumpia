@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Deploy script for the staging environment
+# Requires AWS credentials to be configured

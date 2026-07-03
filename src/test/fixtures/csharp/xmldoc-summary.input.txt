@@ -1,0 +1,6 @@
+<summary>
+Creates a personalized greeting for the specified user and writes it to the configured output stream.
+</summary>
+<param name="name">The full name of the user that will be displayed in the greeting message.</param>
+<param name="locale">The locale identifier used to format the current date and time.</param>
+<returns>The formatted greeting string that was written to the output.</returns>

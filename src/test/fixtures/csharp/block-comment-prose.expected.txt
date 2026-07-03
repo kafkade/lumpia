@@ -1,0 +1,3 @@
+This class provides thread-safe access to the connection
+pool. Connections are acquired lazily and returned
+automatically when the surrounding scope is disposed.

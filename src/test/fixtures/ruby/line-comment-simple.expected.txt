@@ -1,0 +1,2 @@
+Memoize the computed digest so repeated
+calls avoid rehashing the same payload
