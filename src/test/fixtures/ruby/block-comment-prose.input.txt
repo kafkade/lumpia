@@ -1,0 +1,3 @@
+A small helper module for formatting currency values.
+It handles locale-aware separators, rounding modes,
+and optional symbol placement before or after the amount.

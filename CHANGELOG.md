@@ -16,7 +16,7 @@
 - Config resolution with 7-level precedence: explicit arg → ruler cycling → language-specific → global → editor.rulers → editor.wordWrapColumn → default (80)
 - `Lumpia: Roll Text at Column…` command (`lumpia.rollAtColumn`) for one-off wrapping at a specific column width
 - `Lumpia: Unwrap Text` command (`lumpia.unwrap`) to join hard-wrapped lines back into single-line paragraphs, preserving paragraph boundaries and comment prefixes; also available via `lumpia.rollAtColumn` by leaving the column input empty
-- Golden test harness with 52 fixture pairs across TypeScript, Python, Rust, Markdown, and edge cases (CJK, emoji, tabs, long words)
+- Golden test harness with 63 fixture pairs across TypeScript, Python, Rust, Ruby, Markdown, and edge cases (CJK, emoji, tabs, long words)
 - Selection semantics: empty cursor expands to paragraph (plaintext/markdown) or wraps entire comment region (code); selections wrap only selected lines; multiple cursors processed independently with deduplication
 - No-op preservation: wrapping already-wrapped text produces zero changes; CRLF line endings preserved; trailing newlines neither added nor removed
 - Ruler cycling: repeated `Alt+R` cycles through `editor.rulers` values; ruler `0` triggers unwrap; per-document session memory; status bar shows active ruler
