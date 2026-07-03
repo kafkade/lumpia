@@ -1,0 +1,3 @@
+Validates the incoming request payload
+and throws an exception when any
+required field is missing
