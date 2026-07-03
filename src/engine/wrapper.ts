@@ -22,16 +22,35 @@ export function rollText(
 ): string {
   const { tabWidth = 4, doubleSentenceSpacing = false } = options;
 
-  // Detect and normalize CRLF line endings
-  const hasCRLF = text.includes("\r\n");
-  const normalized = hasCRLF ? text.replace(/\r\n/g, "\n") : text;
+  // Detect the dominant line-ending style, then normalize to LF for
+  // processing. Mixed input is normalized to whichever style dominates;
+  // ties fall back to LF.
+  const useCRLF = prefersCRLF(text);
+  const normalized = text.includes("\r\n") ? text.replace(/\r\n/g, "\n") : text;
 
   const blocks = parseContentBlocks(normalized);
   const result = blocks
     .map((b) => wrapBlock(b, column, tabWidth, doubleSentenceSpacing))
     .join("\n");
 
-  return hasCRLF ? result.replace(/\n/g, "\r\n") : result;
+  return useCRLF ? result.replace(/\n/g, "\r\n") : result;
+}
+
+/**
+ * Determine whether text should use CRLF line endings. Counts CRLF vs
+ * standalone LF occurrences and returns true only when CRLF strictly
+ * dominates; ties and LF-majority both resolve to LF.
+ */
+function prefersCRLF(text: string): boolean {
+  let crlf = 0;
+  let lf = 0;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === "\n") {
+      if (i > 0 && text[i - 1] === "\r") crlf++;
+      else lf++;
+    }
+  }
+  return crlf > lf;
 }
 
 /**

@@ -67,6 +67,10 @@ async function applyWraps(
 
   if (edits.length === 0) return;
 
+  // The engine emits LF joins; honor the document's line-ending style so we
+  // don't inject LF into a CRLF file (or vice versa).
+  const eol = editor.document.eol === vscode.EndOfLine.CRLF ? "\r\n" : "\n";
+
   await editor.edit((editBuilder) => {
     for (const edit of edits) {
       const range = new vscode.Range(
@@ -75,7 +79,11 @@ async function applyWraps(
         edit.endLine,
         editor.document.lineAt(edit.endLine).text.length
       );
-      editBuilder.replace(range, edit.replacement);
+      const replacement =
+        eol === "\r\n"
+          ? edit.replacement.replace(/\n/g, "\r\n")
+          : edit.replacement;
+      editBuilder.replace(range, replacement);
     }
   });
 }
