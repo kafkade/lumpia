@@ -399,6 +399,55 @@ const fixtures: FixtureDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // go/ — inner content from Go (// and /* */) comments and Godoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "go",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Decode reads the next JSON-encoded value from the stream and stores it in the value pointed to by v",
+  },
+  {
+    category: "go",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "handleRequest validates the\nincoming payload and then\ndispatches it to the appropriate worker goroutine for processing",
+  },
+  {
+    category: "go",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "Package ratelimit provides a token-bucket rate limiter.",
+      "It is safe for concurrent use by multiple goroutines and",
+      "supports burst capacity as well as a steady refill rate.",
+    ].join("\n"),
+  },
+  {
+    category: "go",
+    name: "godoc-declaration",
+    column: 60,
+    input: [
+      "NewServer returns a Server configured with the given options.",
+      "",
+      "The returned Server is not started; call Run to begin accepting",
+      "connections. Options are applied in order and later options",
+      "override earlier ones.",
+    ].join("\n"),
+  },
+  {
+    category: "go",
+    name: "already-wrapped",
+    column: 80,
+    input: [
+      "Marshal returns the JSON encoding of v, following the same conventions as",
+      "encoding/json. It returns an error if v cannot be represented as valid JSON.",
+    ].join("\n"),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // rust/ — inner content from Rust doc comments
   // ═══════════════════════════════════════════════════════════════════
   {
