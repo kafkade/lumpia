@@ -21,6 +21,7 @@
 - No-op preservation: wrapping already-wrapped text produces zero changes; CRLF line endings preserved; trailing newlines neither added nor removed
 - Ruler cycling: repeated `Alt+R` cycles through `editor.rulers` values; ruler `0` triggers unwrap; per-document session memory; status bar shows active ruler
 - `lumpia.wholeComment` setting: when `false`, empty cursor wraps only the current paragraph within a comment instead of the entire block; selections always override
+- Whole-document wrapping (`Ctrl+A`, `Alt+R`): wraps only comments and docstrings in code files (code is never modified) and every paragraph in Markdown/plaintext files; handles a 10,000-line file in well under 500ms
 - `lumpia.doubleSentenceSpacing` setting: when `true`, wrapping inserts two spaces after sentence-ending punctuation (`.`, `?`, `!`, including when followed by a closing quote or bracket); disabled by default and per-language overridable
 
 ## 0.0.1
