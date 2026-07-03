@@ -1,0 +1,2 @@
+Returns the total number of active
+connections in the pool.

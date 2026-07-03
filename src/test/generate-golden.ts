@@ -368,6 +368,108 @@ const fixtures: FixtureDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // csharp/ — inner content from C# comments and XMLDoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "csharp",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Validates the incoming request payload and throws an exception when any required field is missing",
+  },
+  {
+    category: "csharp",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "This method reads\nthe configuration from disk and\nfalls back to sensible defaults when the file is absent",
+  },
+  {
+    category: "csharp",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "This class provides thread-safe access to the connection pool.",
+      "Connections are acquired lazily and returned automatically",
+      "when the surrounding scope is disposed.",
+    ].join("\n"),
+  },
+  {
+    category: "csharp",
+    name: "xmldoc-summary",
+    column: 60,
+    input: [
+      "<summary>",
+      "Creates a personalized greeting for the specified user and writes it to the configured output stream.",
+      "</summary>",
+      "<param name=\"name\">The full name of the user that will be displayed in the greeting message.</param>",
+      "<param name=\"locale\">The locale identifier used to format the current date and time.</param>",
+      "<returns>The formatted greeting string that was written to the output.</returns>",
+    ].join("\n"),
+  },
+  {
+    category: "csharp",
+    name: "line-comment-noop",
+    column: 40,
+    input: [
+      "Returns the total number of active",
+      "connections in the pool.",
+    ].join("\n"),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ruby/ — inner content from Ruby comments (# and =begin/=end)
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "ruby",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Memoize the computed digest so repeated calls avoid rehashing the same payload",
+  },
+  {
+    category: "ruby",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "This method takes\na collection of records and\nreturns only the ones matching the active scope",
+  },
+  {
+    category: "ruby",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "A small helper module for formatting currency values.",
+      "It handles locale-aware separators, rounding modes,",
+      "and optional symbol placement before or after the amount.",
+    ].join("\n"),
+  },
+  {
+    category: "ruby",
+    name: "rdoc-list",
+    column: 60,
+    input: [
+      "Supported serialization formats:",
+      "",
+      "- JSON: the default format used for API responses",
+      "- YAML: used for human-editable configuration files",
+      "- Marshal: a compact binary format for internal caching only",
+    ].join("\n"),
+  },
+  {
+    category: "ruby",
+    name: "hash-comment-noop",
+    column: 80,
+    input: "Returns the frozen configuration hash.",
+  },
+  {
+    category: "ruby",
+    name: "block-comment-noop",
+    column: 40,
+    input: "Parses the manifest file and returns a\nvalidated config object.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // markdown/ — pure Markdown documents
   // ═══════════════════════════════════════════════════════════════════
   {
