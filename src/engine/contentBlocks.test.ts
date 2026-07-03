@@ -3,6 +3,7 @@ import {
   parseContentBlocks,
   greedyFill,
   wrapBlock,
+  isSentenceEnd,
   type ContentBlock,
 } from "./contentBlocks";
 
@@ -285,6 +286,58 @@ describe("greedyFill", () => {
 
   it("handles text exactly at column width", () => {
     expect(greedyFill("exactly ten", 11, 4)).toEqual(["exactly ten"]);
+  });
+});
+
+describe("isSentenceEnd", () => {
+  it("detects sentence-ending punctuation", () => {
+    expect(isSentenceEnd("done.")).toBe(true);
+    expect(isSentenceEnd("really?")).toBe(true);
+    expect(isSentenceEnd("wow!")).toBe(true);
+  });
+
+  it("ignores non-sentence-ending words", () => {
+    expect(isSentenceEnd("hello")).toBe(false);
+    expect(isSentenceEnd("mid,")).toBe(false);
+    expect(isSentenceEnd("v1.2")).toBe(false);
+  });
+
+  it("looks past trailing closing quotes and brackets", () => {
+    expect(isSentenceEnd('end."')).toBe(true);
+    expect(isSentenceEnd("end.'")).toBe(true);
+    expect(isSentenceEnd("(done!)")).toBe(true);
+    expect(isSentenceEnd("item.]")).toBe(true);
+    expect(isSentenceEnd('really?")')).toBe(true);
+  });
+});
+
+describe("greedyFill double sentence spacing", () => {
+  it("inserts two spaces after sentence-ending punctuation", () => {
+    expect(greedyFill("One. Two.", 80, 4, true)).toEqual(["One.  Two."]);
+  });
+
+  it("uses single spacing when disabled (default)", () => {
+    expect(greedyFill("One. Two.", 80, 4)).toEqual(["One. Two."]);
+    expect(greedyFill("One. Two.", 80, 4, false)).toEqual(["One. Two."]);
+  });
+
+  it("only double-spaces at sentence boundaries", () => {
+    expect(greedyFill("Hello there. How are you?", 80, 4, true)).toEqual([
+      "Hello there.  How are you?",
+    ]);
+  });
+
+  it("handles closing quotes and brackets before the space", () => {
+    expect(greedyFill('He said "hi." Then left.', 80, 4, true)).toEqual([
+      'He said "hi."  Then left.',
+    ]);
+  });
+
+  it("accounts for the extra space in the width budget", () => {
+    // "abc." (4) + two spaces (2) + "de" (2) = 8, fits in 8
+    expect(greedyFill("abc. de", 8, 4, true)).toEqual(["abc.  de"]);
+    // With column 7 the two-space join would exceed, so it wraps
+    expect(greedyFill("abc. de", 7, 4, true)).toEqual(["abc.", "de"]);
   });
 });
 

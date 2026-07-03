@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { wrapRegion } from "./wrapper";
+import { wrapRegion, rollText } from "./wrapper";
 import type { DocumentLike, WrappableRegion, TextRange, CommentPrefix } from "../parser/types";
 
 function makeDoc(text: string, languageId = "typescript"): DocumentLike {
@@ -137,5 +137,41 @@ describe("wrapRegion", () => {
 
     const result = wrapRegion(region, doc, 80, true);
     expect(result).toBe("plain text here");
+  });
+
+  it("applies double sentence spacing when enabled", () => {
+    const text = "// First. Second.";
+    const doc = makeDoc(text);
+    const region: WrappableRegion = {
+      range: { startLine: 0, startCol: 0, endLine: 0, endCol: 0 },
+      languageId: "typescript",
+      kind: "line-comment",
+      prefix: mkPrefix("", "//", " "),
+      innerIndent: 0,
+      contentRange: { startLine: 0, endLine: 0 },
+    };
+
+    const result = wrapRegion(region, doc, 80, false, {
+      doubleSentenceSpacing: true,
+    });
+    expect(result).toBe("// First.  Second.");
+  });
+});
+
+describe("rollText double sentence spacing", () => {
+  it("double-spaces between sentences when enabled", () => {
+    expect(rollText("One. Two.", 80, { doubleSentenceSpacing: true })).toBe(
+      "One.  Two."
+    );
+  });
+
+  it("leaves single spacing by default", () => {
+    expect(rollText("One. Two.", 80)).toBe("One. Two.");
+  });
+
+  it("applies across list items", () => {
+    expect(
+      rollText("- First. Second.", 80, { doubleSentenceSpacing: true })
+    ).toBe("- First.  Second.");
   });
 });
