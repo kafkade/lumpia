@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -59,16 +59,21 @@ When multiple `editor.rulers` are configured and `lumpia.column` is **not** set:
 
 ### Full settings schema
 
-| Setting | Type | Default | Scope |
-|---------|------|---------|-------|
-| `lumpia.column` | number | 80 | resource |
-| `lumpia.wholeComment` | boolean | true | resource |
-| `lumpia.doubleSentenceSpacing` | boolean | false | resource |
-| `lumpia.autoWrap.enabled` | boolean | false | resource |
-| `lumpia.autoWrap.notification` | "icon" \| "text" | "icon" | window |
-| `lumpia.reformat` | boolean | false | resource |
-| `lumpia.opinionated` | boolean | false | resource |
-| `lumpia.parserBackend` | "regex" \| "tree-sitter" | "regex" | window |
+Per-language overrides require VS Code's `language-overridable` scope (a
+resource-level scope that additionally participates in `[language]` sections).
+A plain `resource` scope is settable per folder but is **not** applied inside
+`[language]` blocks, and `window` scope ignores both.
+
+| Setting                        | Type                     | Default | Scope                | Implemented |
+| ------------------------------ | ------------------------ | ------- | -------------------- | ----------- |
+| `lumpia.column`                | number                   | 80      | language-overridable | yes         |
+| `lumpia.reformat`              | boolean                  | false   | language-overridable | yes         |
+| `lumpia.wholeComment`          | boolean                  | true    | language-overridable | yes         |
+| `lumpia.doubleSentenceSpacing` | boolean                  | false   | language-overridable | not yet     |
+| `lumpia.autoWrap.enabled`      | boolean                  | false   | language-overridable | not yet     |
+| `lumpia.autoWrap.notification` | "icon" \| "text"         | "icon"  | window               | not yet     |
+| `lumpia.opinionated`           | boolean                  | false   | language-overridable | not yet     |
+| `lumpia.parserBackend`         | "regex" \| "tree-sitter" | "regex" | window               | not yet     |
 
 ## Consequences
 
