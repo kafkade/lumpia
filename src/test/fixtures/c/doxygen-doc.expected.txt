@@ -1,0 +1,10 @@
+Copy at most n bytes from src into dst.
+
+@param dst Destination buffer that must be large enough to
+           hold the copied bytes plus a terminator
+@param src Null-terminated source string to copy characters
+           from
+@param n Maximum number of bytes to write into the
+         destination buffer
+@return Pointer to the destination buffer dst for call
+                chaining

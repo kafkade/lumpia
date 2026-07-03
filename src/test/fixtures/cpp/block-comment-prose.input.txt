@@ -1,0 +1,4 @@
+A small RAII wrapper around a native file handle.
+The handle is opened in the constructor and closed
+automatically when the object goes out of scope, so
+callers never need to close it explicitly.

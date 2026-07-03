@@ -1,0 +1,6 @@
+Insert a value into the map, overwriting any existing entry.
+
+@tparam T The element type stored in the container, which must be copy or move constructible
+@param key The lookup key used to locate the slot for the value
+@param value The value to store, forwarded into the container
+@return A reference to the inserted or updated element

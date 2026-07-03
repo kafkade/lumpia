@@ -1,0 +1,1 @@
+Allocate a zero-initialized buffer on the heap and return an owning pointer to the caller
