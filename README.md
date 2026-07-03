@@ -13,9 +13,10 @@ Unlike your editor's soft wrap, Lumpia actually reshapes your text by inserting 
 
 ## Configuration
 
-| Setting         | Default | Description                       |
-| --------------- | ------- | --------------------------------- |
-| `lumpia.column` | `80`    | The column at which to roll text. |
+| Setting                        | Default | Description                                                                         |
+| ------------------------------ | ------- | ----------------------------------------------------------------------------------- |
+| `lumpia.column`                | `80`    | The column at which to roll text.                                                   |
+| `lumpia.doubleSentenceSpacing` | `false` | Insert two spaces after sentence-ending punctuation (`.`, `?`, `!`) while wrapping. |
 
 ## Usage
 

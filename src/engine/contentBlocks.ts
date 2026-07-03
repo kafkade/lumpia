@@ -323,13 +323,28 @@ export function parseContentBlocks(text: string): ContentBlock[] {
 // ── Wrapping ─────────────────────────────────────────────────────────
 
 /**
+ * Determine whether a word ends a sentence. A word is a sentence end when,
+ * after stripping any trailing run of closing quotes/brackets (`"`, `'`,
+ * `)`, `]`, `}`), its final character is `.`, `?`, or `!`.
+ */
+export function isSentenceEnd(word: string): boolean {
+  const stripped = word.replace(/["')\]}]+$/, "");
+  const last = stripped[stripped.length - 1];
+  return last === "." || last === "?" || last === "!";
+}
+
+/**
  * Greedy-fill algorithm: fill lines up to `column` display width.
  * Returns wrapped lines (without newline characters).
+ *
+ * When `doubleSentenceSpacing` is true, words that follow a sentence-ending
+ * word are joined with two spaces instead of one.
  */
 export function greedyFill(
   text: string,
   column: number,
-  tabWidth: number
+  tabWidth: number,
+  doubleSentenceSpacing = false
 ): string[] {
   const words = text.replace(/\s+/g, " ").trim().split(" ");
   if (words.length === 1 && words[0] === "") return [];
@@ -343,13 +358,17 @@ export function greedyFill(
     if (!currentLine) {
       currentLine = word;
       currentWidth = wordWidth;
-    } else if (currentWidth + 1 + wordWidth <= column) {
-      currentLine += " " + word;
-      currentWidth += 1 + wordWidth;
     } else {
-      lines.push(currentLine);
-      currentLine = word;
-      currentWidth = wordWidth;
+      const sep =
+        doubleSentenceSpacing && isSentenceEnd(currentLine) ? 2 : 1;
+      if (currentWidth + sep + wordWidth <= column) {
+        currentLine += " ".repeat(sep) + word;
+        currentWidth += sep + wordWidth;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+        currentWidth = wordWidth;
+      }
     }
   }
 
@@ -364,13 +383,14 @@ export function greedyFill(
 export function wrapBlock(
   block: ContentBlock,
   column: number,
-  tabWidth: number
+  tabWidth: number,
+  doubleSentenceSpacing = false
 ): string {
   switch (block.type) {
     case "paragraph":
-      return wrapParagraph(block, column, tabWidth);
+      return wrapParagraph(block, column, tabWidth, doubleSentenceSpacing);
     case "list-item":
-      return wrapListItem(block, column, tabWidth);
+      return wrapListItem(block, column, tabWidth, doubleSentenceSpacing);
     case "code-fence":
     case "indented-code":
     case "table":
@@ -378,9 +398,9 @@ export function wrapBlock(
     case "heading":
       return block.line;
     case "blockquote":
-      return wrapBlockquote(block, column, tabWidth);
+      return wrapBlockquote(block, column, tabWidth, doubleSentenceSpacing);
     case "doc-tag":
-      return wrapDocTag(block, column, tabWidth);
+      return wrapDocTag(block, column, tabWidth, doubleSentenceSpacing);
     case "blank-line":
       return "";
     case "preserved-break":
@@ -391,15 +411,22 @@ export function wrapBlock(
 function wrapParagraph(
   block: ParagraphBlock,
   column: number,
-  tabWidth: number
+  tabWidth: number,
+  doubleSentenceSpacing: boolean
 ): string {
-  return greedyFill(block.lines.join(" "), column, tabWidth).join("\n");
+  return greedyFill(
+    block.lines.join(" "),
+    column,
+    tabWidth,
+    doubleSentenceSpacing
+  ).join("\n");
 }
 
 function wrapListItem(
   block: ListItemBlock,
   column: number,
-  tabWidth: number
+  tabWidth: number,
+  doubleSentenceSpacing: boolean
 ): string {
   const indentStr = " ".repeat(block.indent);
   const firstPrefix = indentStr + block.marker;
@@ -412,7 +439,12 @@ function wrapListItem(
   const allContent = [firstContent, ...contContent].join(" ");
 
   const availableWidth = Math.max(1, column - firstPrefixWidth);
-  const wrapped = greedyFill(allContent, availableWidth, tabWidth);
+  const wrapped = greedyFill(
+    allContent,
+    availableWidth,
+    tabWidth,
+    doubleSentenceSpacing
+  );
   if (wrapped.length === 0) return firstPrefix.trimEnd();
 
   return wrapped
@@ -423,7 +455,8 @@ function wrapListItem(
 function wrapDocTag(
   block: DocTagBlock,
   column: number,
-  tabWidth: number
+  tabWidth: number,
+  doubleSentenceSpacing: boolean
 ): string {
   const firstLine = block.lines[0];
   const trimmed = firstLine.trimStart();
@@ -455,7 +488,12 @@ function wrapDocTag(
   const allContent = [firstContent, ...contContent].join(" ");
 
   const availableWidth = Math.max(1, column - hangWidth);
-  const wrapped = greedyFill(allContent, availableWidth, tabWidth);
+  const wrapped = greedyFill(
+    allContent,
+    availableWidth,
+    tabWidth,
+    doubleSentenceSpacing
+  );
   if (wrapped.length === 0) return hangingPrefix.trimEnd();
 
   return wrapped
@@ -466,7 +504,8 @@ function wrapDocTag(
 function wrapBlockquote(
   block: BlockquoteBlock,
   column: number,
-  tabWidth: number
+  tabWidth: number,
+  doubleSentenceSpacing: boolean
 ): string {
   const prefix = block.prefix;
   const prefixWidth = displayWidth(prefix, tabWidth);
@@ -474,7 +513,7 @@ function wrapBlockquote(
 
   // Recursively wrap inner blocks
   const innerWrapped = block.blocks
-    .map((b) => wrapBlock(b, innerColumn, tabWidth))
+    .map((b) => wrapBlock(b, innerColumn, tabWidth, doubleSentenceSpacing))
     .join("\n");
 
   return innerWrapped
