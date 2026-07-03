@@ -1,0 +1,3 @@
+Parses the query string and builds an
+options object that is passed to the
+fetch call as request configuration

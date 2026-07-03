@@ -1,0 +1,1 @@
+See the documentation at https://example.com/docs/api/v2/authentication for more details about the auth flow

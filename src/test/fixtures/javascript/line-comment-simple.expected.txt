@@ -1,0 +1,3 @@
+This helper normalizes the input array
+and removes any duplicate entries before
+returning it

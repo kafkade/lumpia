@@ -103,6 +103,74 @@ const fixtures: FixtureDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // javascript/ — inner content from JS comments and JSDoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "javascript",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "This helper normalizes the input array and removes any duplicate entries before returning it",
+  },
+  {
+    category: "javascript",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "Parses the query string\nand builds an options object\nthat is passed to the fetch call as request configuration",
+  },
+  {
+    category: "javascript",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "This module provides helpers for working with query strings.",
+      "It parses, serializes, and merges parameters without mutation.",
+      "All functions return new objects and never touch their inputs.",
+    ].join("\n"),
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-param",
+    column: 60,
+    input:
+      "@param name The name of the user that will be displayed in the greeting message and also logged to the console",
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-returns",
+    column: 60,
+    input:
+      "@returns The formatted greeting string containing the user name and the current date and time information",
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-mixed",
+    column: 60,
+    input: [
+      "Creates a personalized greeting message for the user.",
+      "The message includes the current time and locale info.",
+      "",
+      "@param name The user's full name as entered in the form",
+      "@param locale The locale string for date formatting",
+      "@returns The formatted greeting string",
+    ].join("\n"),
+  },
+  {
+    category: "javascript",
+    name: "link-in-comment",
+    column: 40,
+    input:
+      "See the documentation at https://example.com/docs/api/v2/authentication for more details about the auth flow",
+  },
+  {
+    category: "javascript",
+    name: "already-wrapped",
+    column: 80,
+    input: "This line is already short enough.\nNo wrapping needed here.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // java/ — inner content from Java comments and Javadoc
   // ═══════════════════════════════════════════════════════════════════
   {
