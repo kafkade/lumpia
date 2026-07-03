@@ -1,0 +1,2 @@
+Marshal returns the JSON encoding of v, following the same conventions as
+encoding/json. It returns an error if v cannot be represented as valid JSON.

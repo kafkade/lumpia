@@ -1,0 +1,3 @@
+handleRequest validates the
+incoming payload and then
+dispatches it to the appropriate worker goroutine for processing

@@ -1,0 +1,6 @@
+NewServer returns a Server configured with the given
+options.
+
+The returned Server is not started; call Run to begin
+accepting connections. Options are applied in order and
+later options override earlier ones.

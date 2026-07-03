@@ -1,0 +1,3 @@
+This module provides helpers for working with query strings.
+It parses, serializes, and merges parameters without mutation.
+All functions return new objects and never touch their inputs.

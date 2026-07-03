@@ -103,6 +103,74 @@ const fixtures: FixtureDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // javascript/ — inner content from JS comments and JSDoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "javascript",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "This helper normalizes the input array and removes any duplicate entries before returning it",
+  },
+  {
+    category: "javascript",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "Parses the query string\nand builds an options object\nthat is passed to the fetch call as request configuration",
+  },
+  {
+    category: "javascript",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "This module provides helpers for working with query strings.",
+      "It parses, serializes, and merges parameters without mutation.",
+      "All functions return new objects and never touch their inputs.",
+    ].join("\n"),
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-param",
+    column: 60,
+    input:
+      "@param name The name of the user that will be displayed in the greeting message and also logged to the console",
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-returns",
+    column: 60,
+    input:
+      "@returns The formatted greeting string containing the user name and the current date and time information",
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-mixed",
+    column: 60,
+    input: [
+      "Creates a personalized greeting message for the user.",
+      "The message includes the current time and locale info.",
+      "",
+      "@param name The user's full name as entered in the form",
+      "@param locale The locale string for date formatting",
+      "@returns The formatted greeting string",
+    ].join("\n"),
+  },
+  {
+    category: "javascript",
+    name: "link-in-comment",
+    column: 40,
+    input:
+      "See the documentation at https://example.com/docs/api/v2/authentication for more details about the auth flow",
+  },
+  {
+    category: "javascript",
+    name: "already-wrapped",
+    column: 80,
+    input: "This line is already short enough.\nNo wrapping needed here.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // java/ — inner content from Java comments and Javadoc
   // ═══════════════════════════════════════════════════════════════════
   {
@@ -327,6 +395,55 @@ const fixtures: FixtureDef[] = [
       "Ensure the backup directory exists and",
       "is writable before starting the archive",
       "process for all configured data sources.",
+    ].join("\n"),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // go/ — inner content from Go (// and /* */) comments and Godoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "go",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Decode reads the next JSON-encoded value from the stream and stores it in the value pointed to by v",
+  },
+  {
+    category: "go",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "handleRequest validates the\nincoming payload and then\ndispatches it to the appropriate worker goroutine for processing",
+  },
+  {
+    category: "go",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "Package ratelimit provides a token-bucket rate limiter.",
+      "It is safe for concurrent use by multiple goroutines and",
+      "supports burst capacity as well as a steady refill rate.",
+    ].join("\n"),
+  },
+  {
+    category: "go",
+    name: "godoc-declaration",
+    column: 60,
+    input: [
+      "NewServer returns a Server configured with the given options.",
+      "",
+      "The returned Server is not started; call Run to begin accepting",
+      "connections. Options are applied in order and later options",
+      "override earlier ones.",
+    ].join("\n"),
+  },
+  {
+    category: "go",
+    name: "already-wrapped",
+    column: 80,
+    input: [
+      "Marshal returns the JSON encoding of v, following the same conventions as",
+      "encoding/json. It returns an error if v cannot be represented as valid JSON.",
     ].join("\n"),
   },
 
