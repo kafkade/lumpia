@@ -1,0 +1,3 @@
+Ensure the backup directory exists and
+is writable before starting the archive
+process for all configured data sources.

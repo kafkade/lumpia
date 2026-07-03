@@ -218,6 +218,57 @@ const fixtures: FixtureDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // shell/ — inner content from Shell/Bash (#) comments
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "shell",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "List all files in the current directory including hidden ones and print them in long listing format",
+  },
+  {
+    category: "shell",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "This helper function\nchecks whether a given\ncommand exists on the system PATH before running it",
+  },
+  {
+    category: "shell",
+    name: "shebang-noop",
+    column: 80,
+    input: [
+      "#!/usr/bin/env bash",
+      "# Deploy script for the staging environment",
+      "# Requires AWS credentials to be configured",
+    ].join("\n"),
+  },
+  {
+    category: "shell",
+    name: "indented-comment",
+    column: 40,
+    input: [
+      "Run the setup steps below:",
+      "",
+      "    export PATH=$PATH:/opt/tool/bin",
+      "    source ~/.bashrc",
+      "",
+      "Done.",
+    ].join("\n"),
+  },
+  {
+    category: "shell",
+    name: "already-wrapped-noop",
+    column: 40,
+    input: [
+      "Ensure the backup directory exists and",
+      "is writable before starting the archive",
+      "process for all configured data sources.",
+    ].join("\n"),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // rust/ — inner content from Rust doc comments
   // ═══════════════════════════════════════════════════════════════════
   {
