@@ -1,0 +1,2 @@
+@returns The formatted greeting string containing the user
+             name and the current date and time information
