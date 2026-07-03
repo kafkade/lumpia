@@ -1,0 +1,5 @@
+Supported serialization formats:
+
+- JSON: the default format used for API responses
+- YAML: used for human-editable configuration files
+- Marshal: a compact binary format for internal caching only

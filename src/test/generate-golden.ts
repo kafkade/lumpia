@@ -317,6 +317,58 @@ const fixtures: FixtureDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // ruby/ — inner content from Ruby comments (# and =begin/=end)
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "ruby",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Memoize the computed digest so repeated calls avoid rehashing the same payload",
+  },
+  {
+    category: "ruby",
+    name: "line-comment-multiline",
+    column: 40,
+    input:
+      "This method takes\na collection of records and\nreturns only the ones matching the active scope",
+  },
+  {
+    category: "ruby",
+    name: "block-comment-prose",
+    column: 60,
+    input: [
+      "A small helper module for formatting currency values.",
+      "It handles locale-aware separators, rounding modes,",
+      "and optional symbol placement before or after the amount.",
+    ].join("\n"),
+  },
+  {
+    category: "ruby",
+    name: "rdoc-list",
+    column: 60,
+    input: [
+      "Supported serialization formats:",
+      "",
+      "- JSON: the default format used for API responses",
+      "- YAML: used for human-editable configuration files",
+      "- Marshal: a compact binary format for internal caching only",
+    ].join("\n"),
+  },
+  {
+    category: "ruby",
+    name: "hash-comment-noop",
+    column: 80,
+    input: "Returns the frozen configuration hash.",
+  },
+  {
+    category: "ruby",
+    name: "block-comment-noop",
+    column: 40,
+    input: "Parses the manifest file and returns a\nvalidated config object.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // markdown/ — pure Markdown documents
   // ═══════════════════════════════════════════════════════════════════
   {
