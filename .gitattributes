@@ -1,0 +1,4 @@
+# Line-ending golden fixtures store literal CRLF/LF bytes and must never be
+# rewritten by git's autocrlf/eol normalization, or the tests would be
+# testing the checkout's line endings rather than rollText's behavior.
+src/test/fixtures/line-endings/** -text

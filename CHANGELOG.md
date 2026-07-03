@@ -25,6 +25,14 @@
 - `lumpia.doubleSentenceSpacing` setting: when `true`, wrapping inserts two spaces after sentence-ending punctuation (`.`, `?`, `!`, including when followed by a closing quote or bracket); disabled by default and per-language overridable
 - Per-language settings support: `lumpia.column`, `lumpia.reformat`, and `lumpia.wholeComment` now honor VS Code's native `[language]` override sections (declared with `language-overridable` scope), so language-specific values take precedence over the global setting
 
+### Changed
+
+- Files with mixed line endings are now normalized to the dominant style (CRLF or LF) when wrapping, instead of always switching to CRLF whenever any CRLF was present
+
+### Fixed
+
+- Wrapping in the editor now preserves the document's line-ending style: CRLF documents keep CRLF and no longer get LF characters inserted into wrapped lines
+
 ## 0.0.1
 
 - Initial release

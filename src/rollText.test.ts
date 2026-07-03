@@ -133,5 +133,36 @@ describe("rollText", () => {
       const input = "hello\r\n";
       expect(rollText(input, 80)).toBe("hello\r\n");
     });
+
+    it("does not add a trailing newline to CRLF input without one", () => {
+      const input = "one two three four five six\r\nseven eight nine";
+      const result = rollText(input, 20);
+      expect(result.endsWith("\n")).toBe(false);
+      expect(result.endsWith("\r")).toBe(false);
+    });
+
+    it("normalizes mixed endings to CRLF when CRLF dominates", () => {
+      // 2 CRLF, 1 LF → dominant is CRLF
+      const input = "aaaa\r\nbbbb\r\ncccc\ndddd";
+      const result = rollText(input, 4);
+      expect(result).toBe("aaaa\r\nbbbb\r\ncccc\r\ndddd");
+      expect(result.replace(/\r\n/g, "")).not.toContain("\n");
+    });
+
+    it("normalizes mixed endings to LF when LF dominates", () => {
+      // 1 CRLF, 2 LF → dominant is LF
+      const input = "aaaa\nbbbb\ncccc\r\ndddd";
+      const result = rollText(input, 4);
+      expect(result).toBe("aaaa\nbbbb\ncccc\ndddd");
+      expect(result).not.toContain("\r");
+    });
+
+    it("falls back to LF when CRLF and LF counts tie", () => {
+      // 1 CRLF, 1 LF → tie resolves to LF
+      const input = "aaaa\r\nbbbb\ncccc";
+      const result = rollText(input, 4);
+      expect(result).toBe("aaaa\nbbbb\ncccc");
+      expect(result).not.toContain("\r");
+    });
   });
 });
