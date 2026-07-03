@@ -290,6 +290,87 @@ describe("resolveWraps — whole document", () => {
       expect(edit.replacement).toMatch(/\/\//);
     }
   });
+
+  it("never modifies code lines (issue #61)", () => {
+    const doc = makeDoc(
+      [
+        "// Module-level comment that is long enough to wrap at a narrow column width setting",
+        "",
+        "function foo() {",
+        "  // Inner comment that is long enough to wrap at the target column width value",
+        "  return 42;",
+        "}",
+        "",
+        "const answer = computeSomethingWithAVeryLongDescriptiveIdentifierName(1, 2, 3);",
+      ].join("\n")
+    );
+
+    const codeLines = new Set([2, 4, 5, 7]);
+    const edits = resolveWraps(doc, [selection(0, 7)], { column: 40 });
+
+    for (const edit of edits) {
+      // No edit range may cover a code line
+      for (let line = edit.startLine; line <= edit.endLine; line++) {
+        expect(codeLines.has(line)).toBe(false);
+      }
+      // Replacements must not contain code tokens
+      expect(edit.replacement).not.toMatch(/function foo/);
+      expect(edit.replacement).not.toMatch(/return 42;/);
+      expect(edit.replacement).not.toMatch(/computeSomethingWith/);
+    }
+  });
+
+  it("wraps all paragraphs in markdown, preserving blank separators", () => {
+    const doc = makeDoc(
+      [
+        "This is the first paragraph that is quite long and should wrap nicely at forty.",
+        "More of paragraph one continues here on a second physical line of text.",
+        "",
+        "Second paragraph is also long enough to be wrapped at the target column width here.",
+        "",
+        "Third and final paragraph, likewise long enough to be rolled at the narrow width.",
+      ].join("\n"),
+      "markdown"
+    );
+
+    const edits = resolveWraps(doc, [selection(0, 5)], { column: 40 });
+    expect(edits).toHaveLength(1);
+
+    const out = edits[0].replacement;
+    // Every output line must respect the column width
+    for (const line of out.split("\n")) {
+      expect(line.length).toBeLessThanOrEqual(40);
+    }
+    // Blank-line separators between the three paragraphs are preserved
+    expect(out.split("\n\n")).toHaveLength(3);
+  });
+
+  it("completes a 10,000-line file well under 500ms (issue #61)", () => {
+    const chunk = [
+      "// This is a fairly long line comment that certainly exceeds the eighty column target width easily",
+      "function foo() {",
+      "  const x = 1; // trailing note kept short",
+      "  return x;",
+      "}",
+      "",
+    ];
+    const lines: string[] = [];
+    while (lines.length < 10000) lines.push(...chunk);
+    const doc = makeDoc(lines.slice(0, 10000).join("\n"), "typescript");
+
+    const selectAll = selection(0, doc.lineCount - 1);
+    const start = performance.now();
+    const edits = resolveWraps(doc, [selectAll], { column: 80 });
+    const elapsed = performance.now() - start;
+
+    expect(edits.length).toBeGreaterThan(0);
+    expect(elapsed).toBeLessThan(500);
+    // Code lines remain untouched
+    for (const edit of edits) {
+      expect(edit.replacement).not.toMatch(/function foo/);
+      expect(edit.replacement).not.toMatch(/return x;/);
+    }
+  });
 });
 
 // ── Multiple cursors ─────────────────────────────────────────────────
