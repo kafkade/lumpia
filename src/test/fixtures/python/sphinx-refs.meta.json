@@ -1,3 +1,4 @@
 {
-  "column": 60
+  "column": 60,
+  "docstring": true
 }
