@@ -334,6 +334,64 @@ export function isSentenceEnd(word: string): boolean {
 }
 
 /**
+ * Markdown constructs that must never be broken across lines, tried in
+ * order (longest/most-specific first) at each candidate position:
+ *   - inline links & images: `[label](target)`, `![alt](src "title")`
+ *   - reference links:        `[text][ref]`
+ *   - shortcut references:    `[text]`
+ *   - autolinks:              `<scheme:...>`
+ * Labels/targets may contain spaces, so these are kept as atomic tokens.
+ */
+const ATOMIC_LINK_RES: RegExp[] = [
+  /^!?\[[^\]]*\]\([^)]*\)/,
+  /^!?\[[^\]]*\]\[[^\]]*\]/,
+  /^!?\[[^\]]*\]/,
+  /^<[^>\s]+>/,
+];
+
+/** Match an atomic link/image span at the start of `s`, if any. */
+function matchAtomicLink(s: string): string | null {
+  for (const re of ATOMIC_LINK_RES) {
+    const m = re.exec(s);
+    if (m) return m[0];
+  }
+  return null;
+}
+
+/**
+ * Split text into whitespace-delimited tokens, but keep Markdown links,
+ * images, and references intact even when they contain spaces. Runs of
+ * whitespace between tokens are collapsed; whitespace inside a link is
+ * preserved as part of the atomic token.
+ */
+export function tokenize(text: string): string[] {
+  const tokens: string[] = [];
+  const n = text.length;
+  let i = 0;
+
+  while (i < n) {
+    if (/\s/.test(text[i])) {
+      i++;
+      continue;
+    }
+    let token = "";
+    while (i < n && !/\s/.test(text[i])) {
+      const link = matchAtomicLink(text.slice(i));
+      if (link) {
+        token += link;
+        i += link.length;
+      } else {
+        token += text[i];
+        i++;
+      }
+    }
+    tokens.push(token);
+  }
+
+  return tokens;
+}
+
+/**
  * Greedy-fill algorithm: fill lines up to `column` display width.
  * Returns wrapped lines (without newline characters).
  *
@@ -346,8 +404,8 @@ export function greedyFill(
   tabWidth: number,
   doubleSentenceSpacing = false
 ): string[] {
-  const words = text.replace(/\s+/g, " ").trim().split(" ");
-  if (words.length === 1 && words[0] === "") return [];
+  const words = tokenize(text);
+  if (words.length === 0) return [];
 
   const lines: string[] = [];
   let currentLine = "";

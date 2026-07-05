@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   parseContentBlocks,
   greedyFill,
+  tokenize,
   wrapBlock,
   isSentenceEnd,
   type ContentBlock,
@@ -286,6 +287,101 @@ describe("greedyFill", () => {
 
   it("handles text exactly at column width", () => {
     expect(greedyFill("exactly ten", 11, 4)).toEqual(["exactly ten"]);
+  });
+});
+
+describe("tokenize", () => {
+  it("splits plain text on whitespace", () => {
+    expect(tokenize("one two three")).toEqual(["one", "two", "three"]);
+  });
+
+  it("collapses runs of whitespace", () => {
+    expect(tokenize("one   two\n\tthree")).toEqual(["one", "two", "three"]);
+  });
+
+  it("keeps inline links with spaces in the label intact", () => {
+    expect(tokenize("see [the big button](https://x.com/p) now")).toEqual([
+      "see",
+      "[the big button](https://x.com/p)",
+      "now",
+    ]);
+  });
+
+  it("keeps images with spaces intact", () => {
+    expect(tokenize("![a wide alt](img.png) end")).toEqual([
+      "![a wide alt](img.png)",
+      "end",
+    ]);
+  });
+
+  it("keeps inline links with a title intact", () => {
+    expect(tokenize('go [click me](https://x.com "a title") ok')).toEqual([
+      "go",
+      '[click me](https://x.com "a title")',
+      "ok",
+    ]);
+  });
+
+  it("keeps reference links intact", () => {
+    expect(tokenize("use [the label][ref one] here")).toEqual([
+      "use",
+      "[the label][ref one]",
+      "here",
+    ]);
+  });
+
+  it("keeps shortcut references intact", () => {
+    expect(tokenize("as in [see above] for context")).toEqual([
+      "as",
+      "in",
+      "[see above]",
+      "for",
+      "context",
+    ]);
+  });
+
+  it("keeps autolinks intact", () => {
+    expect(tokenize("visit <https://example.com/x> today")).toEqual([
+      "visit",
+      "<https://example.com/x>",
+      "today",
+    ]);
+  });
+
+  it("attaches trailing punctuation to a link token", () => {
+    expect(tokenize("see [x](y).")).toEqual(["see", "[x](y)."]);
+  });
+});
+
+describe("greedyFill link preservation", () => {
+  it("never breaks an inline link mid-link", () => {
+    const result = greedyFill(
+      "Click [the big button](https://example.com/path) to continue",
+      30,
+      4
+    );
+    expect(result).toContain("[the big button](https://example.com/path)");
+    for (const line of result) {
+      expect(line).not.toMatch(/\[the big$/);
+    }
+  });
+
+  it("places an over-long link on its own line without splitting it", () => {
+    const link = "[a very long clickable label](https://example.com/very/long/path)";
+    const result = greedyFill(`start ${link} end`, 20, 4);
+    expect(result).toContain(link);
+  });
+
+  it("keeps a link intact at the end of a line", () => {
+    const result = greedyFill("padding words here [go now](u://x)", 25, 4);
+    expect(result.some((l) => l.includes("[go now](u://x)"))).toBe(true);
+    expect(result.join("\n")).not.toMatch(/\[go$/m);
+  });
+
+  it("does not alter links without internal spaces", () => {
+    expect(greedyFill("see [Config](struct.Config.html) here", 80, 4)).toEqual([
+      "see [Config](struct.Config.html) here",
+    ]);
   });
 });
 
