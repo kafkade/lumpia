@@ -1,0 +1,5 @@
+@example
+const opts = parseQuery('a=1&b=2&flag', { arrays: true });
+
+merge(opts, defaults);
+@returns A new options object built from the parsed query string

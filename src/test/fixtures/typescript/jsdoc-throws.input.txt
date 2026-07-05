@@ -1,0 +1,1 @@
+@throws {RangeError} When the requested index is outside the bounds of the backing array and cannot be clamped safely

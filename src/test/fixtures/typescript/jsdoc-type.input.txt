@@ -1,0 +1,1 @@
+@type {SomeVeryLongUnionType | AnotherLongTypeName | YetAnotherOptionHere}

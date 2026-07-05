@@ -101,6 +101,77 @@ const fixtures: FixtureDef[] = [
     column: 80,
     input: "This line is already short enough.\nNo wrapping needed here.",
   },
+  {
+    category: "typescript",
+    name: "jsdoc-throws",
+    column: 60,
+    input:
+      "@throws {RangeError} When the requested index is outside the bounds of the backing array and cannot be clamped safely",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-deprecated",
+    column: 60,
+    input:
+      "@deprecated Use the new configuration object instead of positional arguments; this overload will be removed in the next major release",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-example",
+    column: 60,
+    input: [
+      "@example",
+      "const greeting = greet('Ada', 'en-US', { includeTime: true });",
+      "",
+      "console.log(greeting);",
+      "@returns The formatted greeting string with the user name included",
+    ].join("\n"),
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-see-link",
+    column: 50,
+    input:
+      "@see the {@link GreetingService the greeting service} for the full details of how locales are resolved at runtime",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-type",
+    column: 40,
+    input:
+      "@type {SomeVeryLongUnionType | AnotherLongTypeName | YetAnotherOptionHere}",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-typedef",
+    column: 40,
+    input:
+      "@typedef {Object} GreetingOptions with a name and locale and includeTime flag",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-template",
+    column: 30,
+    input: "@template T The element type of the collection being iterated over",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-full",
+    column: 60,
+    input: [
+      "Creates a personalized greeting message for the user.",
+      "",
+      "@template T The locale token type accepted by the formatter",
+      "@param {string} name The user's full name as entered in the form",
+      "@param {T} locale The locale token used for date and time formatting",
+      "@returns The formatted greeting string containing the user name and time",
+      "@throws {TypeError} When the provided name is not a string value",
+      "@see the {@link Intl.DateTimeFormat the platform date formatter}",
+      "@example",
+      "const g = greet('Ada', 'en-US');",
+      "console.log(g);",
+    ].join("\n"),
+  },
 
   // ═══════════════════════════════════════════════════════════════════
   // javascript/ — inner content from JS comments and JSDoc
@@ -168,6 +239,25 @@ const fixtures: FixtureDef[] = [
     name: "already-wrapped",
     column: 80,
     input: "This line is already short enough.\nNo wrapping needed here.",
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-example",
+    column: 60,
+    input: [
+      "@example",
+      "const opts = parseQuery('a=1&b=2&flag', { arrays: true });",
+      "",
+      "merge(opts, defaults);",
+      "@returns A new options object built from the parsed query string",
+    ].join("\n"),
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-type",
+    column: 40,
+    input:
+      "@type {Record<string, string | number | boolean> | null | undefined}",
   },
 
   // ═══════════════════════════════════════════════════════════════════

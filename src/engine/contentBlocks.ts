@@ -17,6 +17,7 @@ export type ContentBlock =
   | HeadingBlock
   | BlockquoteBlock
   | DocTagBlock
+  | DocExampleBlock
   | BlankLineBlock
   | PreservedBreakBlock
   | TableBlock;
@@ -60,6 +61,18 @@ export interface DocTagBlock {
   lines: string[];
 }
 
+/**
+ * A verbatim doc-comment example block (e.g. JSDoc/TSDoc `@example`). The
+ * `@example` line and every following line are preserved unchanged until the
+ * next block tag (`@tag`) or the end of the comment. Blank lines inside the
+ * example are kept, and the content is never reflowed so embedded code stays
+ * intact.
+ */
+export interface DocExampleBlock {
+  type: "doc-example";
+  lines: string[];
+}
+
 export interface BlankLineBlock {
   type: "blank-line";
 }
@@ -82,6 +95,13 @@ const TABLE_RE = /^\|.*\|/;
 const BLOCKQUOTE_RE = /^(>\s?)/;
 const LIST_ITEM_RE = /^([-*+])\s|^(\d+[.)])\s/;
 const DOC_TAG_RE = /^@\w+/;
+/** Tags whose following content is preserved verbatim (e.g. `@example`). */
+const DOC_VERBATIM_TAG_RE = /^@(?:example|code)\b/i;
+/**
+ * Doc tags whose whole line(s) are preserved verbatim (never reflowed),
+ * because they carry type expressions or terse metadata rather than prose.
+ */
+const PRESERVE_TAGS = new Set(["@type", "@typedef", "@template"]);
 
 // ── Parser ───────────────────────────────────────────────────────────
 
@@ -177,6 +197,32 @@ export function parseContentBlocks(text: string): ContentBlock[] {
 
     // ── Doc tag ────────────────────────────────────────────────
     if (DOC_TAG_RE.test(trimmed)) {
+      // ── Verbatim example: preserve following content unchanged ──
+      // until the next block tag (`@tag`) or end of input. Blank
+      // lines inside the example are kept so embedded code (and its
+      // spacing) survives intact.
+      if (DOC_VERBATIM_TAG_RE.test(trimmed)) {
+        const exampleLines = [line];
+        i++;
+        while (i < lines.length) {
+          if (DOC_TAG_RE.test(lines[i].trimStart())) break;
+          exampleLines.push(lines[i]);
+          i++;
+        }
+        // Trim trailing blank lines so they re-enter normal processing
+        // (keeping blank-line collapsing consistent with the rest of
+        // the parser).
+        while (
+          exampleLines.length > 1 &&
+          exampleLines[exampleLines.length - 1].trim() === ""
+        ) {
+          exampleLines.pop();
+          i--;
+        }
+        blocks.push({ type: "doc-example", lines: exampleLines });
+        continue;
+      }
+
       const tagLines = [line];
       i++;
       while (i < lines.length) {
@@ -336,6 +382,7 @@ export function isSentenceEnd(word: string): boolean {
 /**
  * Markdown constructs that must never be broken across lines, tried in
  * order (longest/most-specific first) at each candidate position:
+ *   - inline doc tags:        `{@link target label}`, `{@tutorial ...}`
  *   - inline links & images: `[label](target)`, `![alt](src "title")`
  *   - reference links:        `[text][ref]`
  *   - shortcut references:    `[text]`
@@ -343,6 +390,7 @@ export function isSentenceEnd(word: string): boolean {
  * Labels/targets may contain spaces, so these are kept as atomic tokens.
  */
 const ATOMIC_LINK_RES: RegExp[] = [
+  /^\{@\w+[^}]*\}/,
   /^!?\[[^\]]*\]\([^)]*\)/,
   /^!?\[[^\]]*\]\[[^\]]*\]/,
   /^!?\[[^\]]*\]/,
@@ -459,6 +507,8 @@ export function wrapBlock(
       return wrapBlockquote(block, column, tabWidth, doubleSentenceSpacing);
     case "doc-tag":
       return wrapDocTag(block, column, tabWidth, doubleSentenceSpacing);
+    case "doc-example":
+      return block.lines.join("\n");
     case "blank-line":
       return "";
     case "preserved-break":
@@ -516,6 +566,13 @@ function wrapDocTag(
   tabWidth: number,
   doubleSentenceSpacing: boolean
 ): string {
+  // Preserve tags are kept verbatim: their type expressions and following
+  // lines are never reflowed (e.g. `@type {LongUnion}`, `@typedef`,
+  // `@template`).
+  if (PRESERVE_TAGS.has(block.tag.toLowerCase())) {
+    return block.lines.join("\n");
+  }
+
   const firstLine = block.lines[0];
   const trimmed = firstLine.trimStart();
   const outerIndent = firstLine.length - trimmed.length;
