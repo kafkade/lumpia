@@ -685,6 +685,91 @@ const fixtures: FixtureDef[] = [
       "connections in the pool.",
     ].join("\n"),
   },
+  {
+    category: "csharp",
+    name: "xmldoc-returns-fits",
+    column: 60,
+    input: "<returns>true when the payload is valid</returns>",
+  },
+  {
+    category: "csharp",
+    name: "xmldoc-code-verbatim",
+    column: 60,
+    input: [
+      "<example>",
+      "<code>",
+      "var greeter = new Greeter(output);",
+      "greeter.Greet(\"Ada\", \"en-US\");",
+      "</code>",
+      "</example>",
+    ].join("\n"),
+  },
+  {
+    category: "csharp",
+    name: "xmldoc-selfclosing-inline",
+    column: 50,
+    input: [
+      "<summary>",
+      "Formats the value using <see cref=\"System.String.Format(System.String,System.Object)\"/> and returns it.",
+      "</summary>",
+    ].join("\n"),
+  },
+  {
+    category: "csharp",
+    name: "xmldoc-remarks-inline-code",
+    column: 50,
+    input: [
+      "<remarks>",
+      "Call <c>await</c> on the returned task before the connection is disposed by the pool manager.",
+      "</remarks>",
+    ].join("\n"),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // fsharp/ — inner content from F# comments and XMLDoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "fsharp",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Computes the running total of the sequence and returns it as a new immutable list",
+  },
+  {
+    category: "fsharp",
+    name: "xmldoc-summary",
+    column: 60,
+    input: [
+      "<summary>",
+      "Parses the supplied configuration text and returns a validated settings record.",
+      "</summary>",
+      "<param name=\"text\">The raw configuration text read from disk that will be parsed.</param>",
+      "<returns>The validated settings record produced from the input.</returns>",
+    ].join("\n"),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // vb/ — inner content from Visual Basic comments and XMLDoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "vb",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Persists the current record to the underlying data store and returns the assigned identifier",
+  },
+  {
+    category: "vb",
+    name: "xmldoc-summary",
+    column: 60,
+    input: [
+      "<summary>",
+      "Sends the notification to every subscriber registered for the specified channel.",
+      "</summary>",
+      "<param name=\"channel\">The channel whose subscribers should receive the notification message.</param>",
+      "<returns>The number of subscribers that were notified.</returns>",
+    ].join("\n"),
+  },
 
   // ═══════════════════════════════════════════════════════════════════
   // ruby/ — inner content from Ruby comments (# and =begin/=end)

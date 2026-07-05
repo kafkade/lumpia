@@ -1,0 +1,6 @@
+<example>
+<code>
+var greeter = new Greeter(output);
+greeter.Greet("Ada", "en-US");
+</code>
+</example>

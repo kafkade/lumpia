@@ -4,6 +4,7 @@
 
 ### Added
 
+- XMLDoc doc-comment tag handling for C#, F#, and VB (`///` and VB `'''`): block-level tags (`<summary>`, `<param>`, `<typeparam>`, `<returns>`, `<remarks>`, `<value>`, `<exception>`, `<para>`) are wrapped structurally — kept on one line when they fit, otherwise the opening/closing tags sit on their own lines with the content wrapped between them; `<code>` and `<example>` content is preserved verbatim; self-closing tags (`<see cref="..."/>`, `<paramref/>`) and inline `<c>...</c>` spans are treated as atomic tokens so they are never split across a wrap boundary. Adds F# (`.fs`/`.fsi`/`.fsx`) and Visual Basic (`.vb`) as recognized languages.
 - JSDoc/TSDoc doc-comment tag handling: `@example` blocks are preserved verbatim (code and blank lines kept intact) until the next tag or end of comment; `@type`, `@typedef`, and `@template` tags are preserved verbatim; inline tags like `{@link ...}` are treated as atomic tokens so they are never split across a wrap boundary. Existing hanging-indent wrapping for `@param`, `@returns`, `@throws`, `@deprecated`, and `@see` is unchanged.
 - Added CI workflow for pull request validation (lint, build, test)
 - Added release workflow for automated GitHub Releases and VS Code Marketplace publishing

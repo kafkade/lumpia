@@ -2,6 +2,7 @@ import type { LanguageDefinition } from "./types";
 import { cFamilyLanguages } from "./definitions/c-family";
 import { scriptFamilyLanguages } from "./definitions/script-family";
 import { styleLanguages } from "./definitions/styles";
+import { dotnetFamilyLanguages } from "./definitions/dotnet-family";
 
 const byId = new Map<string, LanguageDefinition>();
 
@@ -17,6 +18,7 @@ for (const def of [
   ...cFamilyLanguages,
   ...scriptFamilyLanguages,
   ...styleLanguages,
+  ...dotnetFamilyLanguages,
 ]) {
   register(def);
 }

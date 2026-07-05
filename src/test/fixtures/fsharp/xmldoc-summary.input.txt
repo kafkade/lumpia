@@ -1,0 +1,5 @@
+<summary>
+Parses the supplied configuration text and returns a validated settings record.
+</summary>
+<param name="text">The raw configuration text read from disk that will be parsed.</param>
+<returns>The validated settings record produced from the input.</returns>

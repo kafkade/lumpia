@@ -1,0 +1,5 @@
+<summary>
+Formats the value using
+<see cref="System.String.Format(System.String,System.Object)"/>
+and returns it.
+</summary>

@@ -49,4 +49,21 @@ describe("language registry", () => {
     expect(getLanguage("scss")!.id).toBe("css");
     expect(getLanguage("less")).toBeDefined();
   });
+
+  it("registers F# and looks it up by ID and extension", () => {
+    expect(getLanguage("fsharp")).toBeDefined();
+    expect(getLanguage("fsharp")!.id).toBe("fsharp");
+    for (const ext of [".fs", ".fsi", ".fsx"]) {
+      expect(getLanguageByExtension(ext)?.id).toBe("fsharp");
+    }
+    expect(getLanguage("fsharp")!.docComments?.line).toContain("///");
+  });
+
+  it("registers VB and looks it up by ID and extension", () => {
+    expect(getLanguage("vb")).toBeDefined();
+    expect(getLanguage("vb")!.id).toBe("vb");
+    expect(getLanguageByExtension(".vb")?.id).toBe("vb");
+    expect(getLanguage("vb")!.lineComments).toContain("'");
+    expect(getLanguage("vb")!.docComments?.line).toContain("'''");
+  });
 });

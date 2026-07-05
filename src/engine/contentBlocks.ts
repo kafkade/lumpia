@@ -18,6 +18,7 @@ export type ContentBlock =
   | BlockquoteBlock
   | DocTagBlock
   | DocExampleBlock
+  | XmlDocBlock
   | BlankLineBlock
   | PreservedBreakBlock
   | TableBlock;
@@ -73,6 +74,29 @@ export interface DocExampleBlock {
   lines: string[];
 }
 
+/**
+ * An XML documentation element (C#/F#/VB `///` doc comments), e.g.
+ * `<summary>`, `<param name="x">`, `<returns>`, `<remarks>`. The opening tag
+ * (with any attributes) and closing tag are preserved verbatim; the inner
+ * content is either wrapped as prose or — for verbatim tags like `<code>` and
+ * `<example>` — preserved unchanged.
+ */
+export interface XmlDocBlock {
+  type: "xml-doc";
+  /** Leading whitespace count on the opening-tag line. */
+  indent: number;
+  /** Opening tag verbatim, e.g. `<param name="x">`. */
+  openTag: string;
+  /** Lower-cased tag name, e.g. `param`. */
+  tagName: string;
+  /** Closing tag, e.g. `</param>`. */
+  closeTag: string;
+  /** True for tags whose inner content is preserved verbatim (`code`, `example`). */
+  verbatim: boolean;
+  /** Raw inner content lines between the opening and closing tags. */
+  innerLines: string[];
+}
+
 export interface BlankLineBlock {
   type: "blank-line";
 }
@@ -102,6 +126,109 @@ const DOC_VERBATIM_TAG_RE = /^@(?:example|code)\b/i;
  * because they carry type expressions or terse metadata rather than prose.
  */
 const PRESERVE_TAGS = new Set(["@type", "@typedef", "@template"]);
+
+/**
+ * Block-level XML documentation tags (C#/F#/VB). When one of these appears at
+ * the start of a line, its element is captured and wrapped structurally.
+ */
+const XML_BLOCK_TAGS = new Set([
+  "summary",
+  "remarks",
+  "returns",
+  "param",
+  "typeparam",
+  "value",
+  "exception",
+  "para",
+  "example",
+  "code",
+  "list",
+  "item",
+  "description",
+]);
+/** XML doc tags whose inner content is preserved verbatim. */
+const XML_VERBATIM_TAGS = new Set(["code", "example"]);
+/** Match a (non-self-closing) XML opening tag at the start of `s`. */
+const XML_OPEN_TAG_RE = /^<([a-zA-Z][\w.-]*)((?:\s[^>]*?)?)>/;
+
+/**
+ * Match an XML opening tag (with any attributes) at the start of `s`. Returns
+ * the verbatim tag text and its lower-cased name, or null when `s` does not
+ * begin with an opening tag or begins with a self-closing tag.
+ */
+function matchXmlOpenTag(
+  s: string
+): { tagName: string; openTag: string } | null {
+  const m = XML_OPEN_TAG_RE.exec(s);
+  if (!m) return null;
+  // Exclude self-closing tags like `<see cref="x"/>`.
+  if (m[0].endsWith("/>")) return null;
+  return { tagName: m[1].toLowerCase(), openTag: m[0] };
+}
+
+/** True when `s` begins with a recognized block-level XML doc opening tag. */
+function isXmlBlockStart(s: string): boolean {
+  const open = matchXmlOpenTag(s);
+  return open !== null && XML_BLOCK_TAGS.has(open.tagName);
+}
+
+/**
+ * Collect a block-level XML documentation element starting at `lines[start]`.
+ * Returns the parsed block and the index of the next unconsumed line, or null
+ * when the line is not a recognized block tag or the element is unterminated.
+ */
+function collectXmlElement(
+  lines: string[],
+  start: number
+): { block: XmlDocBlock; next: number } | null {
+  const first = lines[start];
+  const trimmed = first.trimStart();
+  const indent = first.length - trimmed.length;
+  const open = matchXmlOpenTag(trimmed);
+  if (!open || !XML_BLOCK_TAGS.has(open.tagName)) return null;
+
+  const closeTag = `</${open.tagName}>`;
+  const verbatim = XML_VERBATIM_TAGS.has(open.tagName);
+  const innerLines: string[] = [];
+
+  const make = (next: number): { block: XmlDocBlock; next: number } => ({
+    block: {
+      type: "xml-doc",
+      indent,
+      openTag: open.openTag,
+      tagName: open.tagName,
+      closeTag,
+      verbatim,
+      innerLines,
+    },
+    next,
+  });
+
+  // Content on the opening-tag line after the tag.
+  const rest = trimmed.slice(open.openTag.length);
+  const sameLineClose = rest.indexOf(closeTag);
+  if (sameLineClose !== -1) {
+    const inner = rest.slice(0, sameLineClose);
+    if (inner.trim().length > 0) innerLines.push(inner);
+    return make(start + 1);
+  }
+  if (rest.trim().length > 0) innerLines.push(rest);
+
+  // Scan following lines for the closing tag.
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i];
+    const idx = line.indexOf(closeTag);
+    if (idx !== -1) {
+      const before = line.slice(0, idx);
+      if (before.trim().length > 0) innerLines.push(before);
+      return make(i + 1);
+    }
+    innerLines.push(line);
+  }
+
+  // Unterminated element — let the caller fall back to normal handling.
+  return null;
+}
 
 // ── Parser ───────────────────────────────────────────────────────────
 
@@ -195,6 +322,18 @@ export function parseContentBlocks(text: string): ContentBlock[] {
       continue;
     }
 
+    // ── XML doc element (C#/F#/VB `///` doc comments) ──────────
+    const xmlOpen = matchXmlOpenTag(trimmed);
+    if (xmlOpen && XML_BLOCK_TAGS.has(xmlOpen.tagName)) {
+      const xml = collectXmlElement(lines, i);
+      if (xml) {
+        blocks.push(xml.block);
+        i = xml.next;
+        continue;
+      }
+      // Unterminated — fall through to normal handling.
+    }
+
     // ── Doc tag ────────────────────────────────────────────────
     if (DOC_TAG_RE.test(trimmed)) {
       // ── Verbatim example: preserve following content unchanged ──
@@ -230,6 +369,7 @@ export function parseContentBlocks(text: string): ContentBlock[] {
         const tt = tl.trimStart();
         if (tt === "") break;
         if (DOC_TAG_RE.test(tt)) break;
+        if (isXmlBlockStart(tt)) break;
         if (HEADING_RE.test(tt)) break;
         if (CODE_FENCE_RE.test(tt)) break;
         if (TABLE_RE.test(tt)) break;
@@ -272,6 +412,7 @@ export function parseContentBlocks(text: string): ContentBlock[] {
         if (CODE_FENCE_RE.test(lt)) break;
         if (TABLE_RE.test(lt)) break;
         if (DOC_TAG_RE.test(lt)) break;
+        if (isXmlBlockStart(lt)) break;
         if (BLOCKQUOTE_RE.test(lt)) break;
         // Continuation if indented past marker
         const llIndent = ll.length - lt.length;
@@ -339,6 +480,7 @@ export function parseContentBlocks(text: string): ContentBlock[] {
       if (BLOCKQUOTE_RE.test(pt)) break;
       if (LIST_ITEM_RE.test(pt)) break;
       if (DOC_TAG_RE.test(pt)) break;
+      if (paraLines.length > 0 && isXmlBlockStart(pt)) break;
       // Check for preserved break — ends this paragraph
       if (pl.endsWith("  ")) {
         paraLines.push(pl);
@@ -394,6 +536,10 @@ const ATOMIC_LINK_RES: RegExp[] = [
   /^!?\[[^\]]*\]\([^)]*\)/,
   /^!?\[[^\]]*\]\[[^\]]*\]/,
   /^!?\[[^\]]*\]/,
+  // Inline XML doc code span: `<c>...</c>` kept intact even with spaces.
+  /^<c>[^<]*<\/c>/,
+  // Self-closing XML doc tag with attributes, e.g. `<see cref="X"/>`.
+  /^<[a-zA-Z][\w.-]*(?:\s[^>]*?)?\/>/,
   /^<[^>\s]+>/,
 ];
 
@@ -509,6 +655,8 @@ export function wrapBlock(
       return wrapDocTag(block, column, tabWidth, doubleSentenceSpacing);
     case "doc-example":
       return block.lines.join("\n");
+    case "xml-doc":
+      return wrapXmlDoc(block, column, tabWidth, doubleSentenceSpacing);
     case "blank-line":
       return "";
     case "preserved-break":
@@ -614,6 +762,57 @@ function wrapDocTag(
   return wrapped
     .map((line, i) => (i === 0 ? hangingPrefix : contPrefix) + line)
     .join("\n");
+}
+
+/**
+ * Wrap an XML documentation element. When the whole element fits on one line
+ * it is left as-is; otherwise the opening and closing tags sit on their own
+ * lines with the inner content wrapped as prose (or preserved verbatim for
+ * `<code>`/`<example>`).
+ */
+function wrapXmlDoc(
+  block: XmlDocBlock,
+  column: number,
+  tabWidth: number,
+  doubleSentenceSpacing: boolean
+): string {
+  const indentStr = " ".repeat(block.indent);
+  const innerColumn = Math.max(1, column - block.indent);
+
+  // Try a single line: `<tag>inner</tag>`. For verbatim tags this is only
+  // possible when the inner content is a single line.
+  const canSingleLine = !block.verbatim || block.innerLines.length <= 1;
+  if (canSingleLine) {
+    const innerSingle = block.verbatim
+      ? (block.innerLines[0] ?? "").trim()
+      : block.innerLines
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0)
+          .join(" ");
+    const singleLine = indentStr + block.openTag + innerSingle + block.closeTag;
+    if (displayWidth(singleLine, tabWidth) <= column) {
+      return singleLine;
+    }
+  }
+
+  // Expanded form: tags on their own lines.
+  const openLine = indentStr + block.openTag;
+  const closeLine = indentStr + block.closeTag;
+
+  if (block.verbatim) {
+    // Preserve inner content exactly.
+    return [openLine, ...block.innerLines, closeLine].join("\n");
+  }
+
+  const innerText = block.innerLines.map((l) => l.trim()).join(" ");
+  const wrapped = greedyFill(
+    innerText,
+    innerColumn,
+    tabWidth,
+    doubleSentenceSpacing
+  );
+  const innerOut = wrapped.map((l) => indentStr + l);
+  return [openLine, ...innerOut, closeLine].join("\n");
 }
 
 function wrapBlockquote(

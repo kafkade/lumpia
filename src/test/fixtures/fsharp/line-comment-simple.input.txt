@@ -1,0 +1,1 @@
+Computes the running total of the sequence and returns it as a new immutable list
