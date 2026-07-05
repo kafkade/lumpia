@@ -31,6 +31,7 @@
 
 ### Fixed
 
+- Wrapping no longer breaks Markdown links, images, and references across lines: inline links (`[label](url)`), images (`![alt](src)`), reference links (`[text][ref]`), and autolinks (`<url>`) are kept intact even when their label or title contains spaces
 - Wrapping in the editor now preserves the document's line-ending style: CRLF documents keep CRLF and no longer get LF characters inserted into wrapped lines
 
 ## 0.0.1

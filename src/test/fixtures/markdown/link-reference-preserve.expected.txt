@@ -1,0 +1,4 @@
+Refer to
+[the config guide][cfg ref]
+for tuning the wrapping column
+and tab width
