@@ -647,3 +647,139 @@ describe("wrapBlock", () => {
     );
   });
 });
+
+// ── XML documentation tags (C#/F#/VB) ────────────────────────────────
+
+describe("XML doc parsing", () => {
+  it("parses a multi-line summary element as one xml-doc block", () => {
+    const blocks = parseContentBlocks(
+      "<summary>\nCreates a greeting.\n</summary>"
+    );
+    expect(blocks).toEqual([
+      {
+        type: "xml-doc",
+        indent: 0,
+        openTag: "<summary>",
+        tagName: "summary",
+        closeTag: "</summary>",
+        verbatim: false,
+        innerLines: ["Creates a greeting."],
+      },
+    ]);
+  });
+
+  it("parses a single-line param element with attributes", () => {
+    const blocks = parseContentBlocks(
+      '<param name="name">The user name.</param>'
+    );
+    expect(blocks).toEqual([
+      {
+        type: "xml-doc",
+        indent: 0,
+        openTag: '<param name="name">',
+        tagName: "param",
+        closeTag: "</param>",
+        verbatim: false,
+        innerLines: ["The user name."],
+      },
+    ]);
+  });
+
+  it("flags <code> and <example> as verbatim", () => {
+    const blocks = parseContentBlocks(
+      "<code>\nvar x = 1;\n</code>"
+    );
+    expect(blocks[0].type).toBe("xml-doc");
+    expect((blocks[0] as { verbatim: boolean }).verbatim).toBe(true);
+  });
+
+  it("keeps consecutive elements as separate blocks", () => {
+    const blocks = parseContentBlocks(
+      '<summary>Does a thing.</summary>\n<returns>The result.</returns>'
+    );
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].type).toBe("xml-doc");
+    expect(blocks[1].type).toBe("xml-doc");
+  });
+
+  it("does not treat prose containing < as an XML element", () => {
+    const blocks = parseContentBlocks("check that x < y before calling");
+    expect(blocks[0].type).toBe("paragraph");
+  });
+
+  it("falls back to paragraph for an unterminated element", () => {
+    const blocks = parseContentBlocks("<summary>never closed here");
+    expect(blocks[0].type).toBe("paragraph");
+  });
+});
+
+describe("XML doc wrapping", () => {
+  const xml = (
+    openTag: string,
+    tagName: string,
+    closeTag: string,
+    innerLines: string[],
+    verbatim = false,
+    indent = 0
+  ): ContentBlock => ({
+    type: "xml-doc",
+    indent,
+    openTag,
+    tagName,
+    closeTag,
+    verbatim,
+    innerLines,
+  });
+
+  it("leaves a short element untouched on one line", () => {
+    const block = xml("<returns>", "returns", "</returns>", ["true if valid"]);
+    expect(wrapBlock(block, 60, 4)).toBe("<returns>true if valid</returns>");
+  });
+
+  it("expands tags onto their own lines when content must wrap", () => {
+    const block = xml("<summary>", "summary", "</summary>", [
+      "Creates a personalized greeting for the specified user and writes it out.",
+    ]);
+    expect(wrapBlock(block, 40, 4)).toBe(
+      [
+        "<summary>",
+        "Creates a personalized greeting for the",
+        "specified user and writes it out.",
+        "</summary>",
+      ].join("\n")
+    );
+  });
+
+  it("preserves the opening tag attributes when expanding", () => {
+    const block = xml('<param name="name">', "param", "</param>", [
+      "The full name of the user that will be displayed in the greeting.",
+    ]);
+    const out = wrapBlock(block, 40, 4).split("\n");
+    expect(out[0]).toBe('<param name="name">');
+    expect(out[out.length - 1]).toBe("</param>");
+  });
+
+  it("preserves verbatim <code> content when expanding", () => {
+    const block = xml("<code>", "code", "</code>", [
+      "var x = compute(a, b);",
+      "Console.WriteLine(x);",
+    ], true);
+    expect(wrapBlock(block, 60, 4)).toBe(
+      "<code>\nvar x = compute(a, b);\nConsole.WriteLine(x);\n</code>"
+    );
+  });
+
+  it("keeps self-closing tags intact within wrapped prose", () => {
+    const block = xml("<summary>", "summary", "</summary>", [
+      'See <see cref="System.String"/> for details about formatting.',
+    ]);
+    const out = wrapBlock(block, 30, 4);
+    expect(out).toContain('<see cref="System.String"/>');
+    // The self-closing tag must never be split across lines.
+    for (const line of out.split("\n")) {
+      if (line.includes("<see")) {
+        expect(line).toContain('"/>');
+      }
+    }
+  });
+});

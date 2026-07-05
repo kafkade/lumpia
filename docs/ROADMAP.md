@@ -101,7 +101,7 @@ Lumpia is a minimal VS Code extension with a single command (`lumpia.roll`, `Alt
 |----|------|-----|
 | M3-1 | Markdown-aware comment parsing (lists, code blocks, blockquotes) | ADR-005 |
 | M3-2 | JSDoc/TSDoc tag handling (`@param`, `@returns`, `@example`) | ADR-005 |
-| M3-3 | XMLDoc tag handling (C#, F#, VB) | — |
+| M3-3 | XMLDoc tag handling (C#, F#, VB) | ADR-005 |
 | M3-4 | Python docstring support (triple-quote, reST, NumPy, Google style) | — |
 | M3-5 | Rustdoc / Godoc / Dartdoc support | — |
 | M3-6 | LaTeX document support | — |
