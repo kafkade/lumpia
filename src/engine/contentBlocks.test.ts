@@ -182,6 +182,55 @@ describe("parseContentBlocks", () => {
     expect(blocks[1].type).toBe("doc-tag");
   });
 
+  it("captures @example content verbatim as a doc-example block", () => {
+    const text = [
+      "@example",
+      "const x = foo(a, b, c);",
+      "console.log(x);",
+    ].join("\n");
+    const blocks = parseContentBlocks(text);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].type).toBe("doc-example");
+    if (blocks[0].type === "doc-example") {
+      expect(blocks[0].lines).toEqual([
+        "@example",
+        "const x = foo(a, b, c);",
+        "console.log(x);",
+      ]);
+    }
+  });
+
+  it("preserves blank lines inside an @example block", () => {
+    const text = [
+      "@example",
+      "const x = 1;",
+      "",
+      "const y = 2;",
+    ].join("\n");
+    const blocks = parseContentBlocks(text);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].type).toBe("doc-example");
+    if (blocks[0].type === "doc-example") {
+      expect(blocks[0].lines).toHaveLength(4);
+      expect(blocks[0].lines[2]).toBe("");
+    }
+  });
+
+  it("terminates an @example block at the next doc tag", () => {
+    const text = [
+      "@example",
+      "const x = foo();",
+      "@returns the result",
+    ].join("\n");
+    const blocks = parseContentBlocks(text);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].type).toBe("doc-example");
+    if (blocks[0].type === "doc-example") {
+      expect(blocks[0].lines).toEqual(["@example", "const x = foo();"]);
+    }
+    expect(blocks[1].type).toBe("doc-tag");
+  });
+
   it("detects preserved breaks (trailing double space)", () => {
     const text = "line with break  ";
     const blocks = parseContentBlocks(text);
@@ -346,6 +395,12 @@ describe("tokenize", () => {
       "<https://example.com/x>",
       "today",
     ]);
+  });
+
+  it("keeps inline doc tags with spaces intact", () => {
+    expect(
+      tokenize("see {@link Foo the label} for more")
+    ).toEqual(["see", "{@link Foo the label}", "for", "more"]);
   });
 
   it("attaches trailing punctuation to a link token", () => {
@@ -523,6 +578,31 @@ describe("wrapBlock", () => {
     if (lines.length > 1) {
       const indent = lines[1].length - lines[1].trimStart().length;
       expect(indent).toBe("@param name ".length);
+    }
+  });
+
+  it("preserves an @example block verbatim", () => {
+    const block: ContentBlock = {
+      type: "doc-example",
+      lines: [
+        "@example",
+        "const x = foo(reallyLongArgumentOne, reallyLongArgumentTwo, three);",
+        "console.log(x);",
+      ],
+    };
+    const result = wrapBlock(block, 40, 4);
+    expect(result).toBe(block.lines.join("\n"));
+  });
+
+  it("preserves @type/@typedef/@template tags verbatim", () => {
+    for (const tag of ["@type", "@typedef", "@template"]) {
+      const block: ContentBlock = {
+        type: "doc-tag",
+        tag,
+        lines: [`${tag} {SomeVeryLongUnionType | AnotherLongType | Third}`],
+      };
+      const result = wrapBlock(block, 30, 4);
+      expect(result).toBe(block.lines[0]);
     }
   });
 

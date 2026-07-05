@@ -1,0 +1,1 @@
+@typedef {Object} GreetingOptions with a name and locale and includeTime flag

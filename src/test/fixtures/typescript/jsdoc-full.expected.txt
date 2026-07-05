@@ -1,0 +1,15 @@
+Creates a personalized greeting message for the user.
+
+@template T The locale token type accepted by the formatter
+@param {string} name The user's full name as entered in the
+                     form
+@param {T} locale The locale token used for date and time
+                  formatting
+@returns The formatted greeting string containing the user
+             name and time
+@throws {TypeError} When the provided name is not a string
+                         value
+@see the {@link Intl.DateTimeFormat the platform date formatter}
+@example
+const g = greet('Ada', 'en-US');
+console.log(g);

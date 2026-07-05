@@ -1,0 +1,3 @@
+@see the {@link GreetingService the greeting service}
+         for the full details of how locales are
+         resolved at runtime
