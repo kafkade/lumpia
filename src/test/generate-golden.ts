@@ -17,6 +17,8 @@ interface FixtureDef {
   input: string;
   column?: number;
   tabWidth?: number;
+  /** When true, wrap in Python docstring mode (reST/Google/NumPy sections). */
+  docstring?: boolean;
 }
 
 const fixtures: FixtureDef[] = [
@@ -343,6 +345,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "docstring-prose",
     column: 60,
+    docstring: true,
     input: [
       "A utility module for processing CSV files.",
       "Handles encoding detection, delimiter inference,",
@@ -380,6 +383,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "docstring-code-example",
     column: 60,
+    docstring: true,
     input: [
       "Parse a date string into a datetime object.",
       "",
@@ -397,6 +401,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "numpy-style",
     column: 60,
+    docstring: true,
     input: [
       "Compute the cross-correlation between two signals.",
       "",
@@ -415,6 +420,39 @@ const fixtures: FixtureDef[] = [
   },
   {
     category: "python",
+    name: "google-style",
+    column: 60,
+    docstring: true,
+    input: [
+      "Fetch rows matching the query from the backing store.",
+      "",
+      "Args:",
+      "    query: The SQL query string to execute against the configured database",
+      "    limit (int): Maximum number of rows to return from the result set",
+      "",
+      "Returns:",
+      "    A list of row objects that matched the given query within the limit",
+      "",
+      "Raises:",
+      "    ValueError: If the provided limit is negative or is not a valid integer",
+    ].join("\n"),
+  },
+  {
+    category: "python",
+    name: "rest-fields",
+    column: 60,
+    docstring: true,
+    input: [
+      "Process a batch of records from the input queue.",
+      "",
+      ":param records: The list of record objects to process in this batch iteration",
+      ":param timeout: Maximum time in seconds to wait for each record to be processed",
+      ":returns: The number of successfully processed records",
+      ":raises ValueError: If the timeout is negative or is not a valid integer value",
+    ].join("\n"),
+  },
+  {
+    category: "python",
     name: "hash-comment-noop",
     column: 80,
     input: "Short comment.",
@@ -423,6 +461,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "sphinx-refs",
     column: 60,
+    docstring: true,
     input:
       "See :class:`UserManager` and :func:`create_user` for details on how user accounts are created and managed in the system",
   },
@@ -430,6 +469,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "multiline-string",
     column: 60,
+    docstring: true,
     input: [
       "This is the content of a triple-quoted string.",
       "It spans multiple lines and should be reflowed",
@@ -1206,17 +1246,19 @@ for (const f of fixtures) {
 
   const col = f.column ?? 80;
   const tw = f.tabWidth ?? 4;
+  const docstring = f.docstring ?? false;
 
   writeFileSync(join(dir, `${f.name}.input.txt`), f.input);
 
-  const expected = rollText(f.input, col, { tabWidth: tw });
+  const expected = rollText(f.input, col, { tabWidth: tw, docstring });
   writeFileSync(join(dir, `${f.name}.expected.txt`), expected);
 
   // Write meta only when non-default
-  if (col !== 80 || tw !== 4) {
-    const meta: Record<string, number> = {};
+  if (col !== 80 || tw !== 4 || docstring) {
+    const meta: Record<string, number | boolean> = {};
     if (col !== 80) meta.column = col;
     if (tw !== 4) meta.tabWidth = tw;
+    if (docstring) meta.docstring = true;
     writeFileSync(
       join(dir, `${f.name}.meta.json`),
       JSON.stringify(meta, null, 2) + "\n"

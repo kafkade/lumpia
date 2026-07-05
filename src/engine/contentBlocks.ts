@@ -6,6 +6,23 @@
  */
 
 import { displayWidth } from "../utils/displayWidth";
+import {
+  tryDocstringBlock,
+  wrapDocstringBlock,
+  isRestField,
+  isGoogleHeader,
+  isNumpyHeaderAt,
+  type DocstringBlock,
+} from "./docstring";
+
+/** Options controlling how content is parsed into blocks. */
+export interface ParseOptions {
+  /**
+   * When true, recognize Python docstring constructs (reST field lists,
+   * Google and NumPy sections) in addition to the generic markdown handling.
+   */
+  docstring?: boolean;
+}
 
 // ── Block types ──────────────────────────────────────────────────────
 
@@ -21,7 +38,8 @@ export type ContentBlock =
   | XmlDocBlock
   | BlankLineBlock
   | PreservedBreakBlock
-  | TableBlock;
+  | TableBlock
+  | DocstringBlock;
 
 export interface ParagraphBlock {
   type: "paragraph";
@@ -233,10 +251,31 @@ function collectXmlElement(
 // ── Parser ───────────────────────────────────────────────────────────
 
 /**
+ * True when line `idx` begins a Python docstring construct (reST field,
+ * Google section header, or NumPy underlined header). Used to stop generic
+ * paragraph/list/doc-tag gathering from swallowing a following section.
+ */
+function isDocstringConstruct(
+  lines: string[],
+  idx: number,
+  trimmed: string
+): boolean {
+  return (
+    isRestField(trimmed) ||
+    isGoogleHeader(trimmed) ||
+    isNumpyHeaderAt(lines, idx)
+  );
+}
+
+/**
  * Parse text into a sequence of content blocks.
  * Best-effort detection of markdown-like structures.
  */
-export function parseContentBlocks(text: string): ContentBlock[] {
+export function parseContentBlocks(
+  text: string,
+  options: ParseOptions = {}
+): ContentBlock[] {
+  const { docstring = false } = options;
   const lines = text.split("\n");
   const blocks: ContentBlock[] = [];
   let i = 0;
@@ -256,6 +295,16 @@ export function parseContentBlocks(text: string): ContentBlock[] {
       continue;
     }
     prevWasBlank = false;
+
+    // ── Python docstring constructs (reST / Google / NumPy) ────
+    if (docstring) {
+      const doc = tryDocstringBlock(lines, i);
+      if (doc) {
+        blocks.push(doc.block);
+        i = doc.next;
+        continue;
+      }
+    }
 
     // ── Code fence ─────────────────────────────────────────────
     const fenceMatch = trimmed.match(CODE_FENCE_RE);
@@ -368,6 +417,7 @@ export function parseContentBlocks(text: string): ContentBlock[] {
         const tl = lines[i];
         const tt = tl.trimStart();
         if (tt === "") break;
+        if (docstring && isDocstringConstruct(lines, i, tt)) break;
         if (DOC_TAG_RE.test(tt)) break;
         if (isXmlBlockStart(tt)) break;
         if (HEADING_RE.test(tt)) break;
@@ -407,6 +457,7 @@ export function parseContentBlocks(text: string): ContentBlock[] {
         const ll = lines[i];
         const lt = ll.trimStart();
         if (lt === "") break;
+        if (docstring && isDocstringConstruct(lines, i, lt)) break;
         if (LIST_ITEM_RE.test(lt)) break;
         if (HEADING_RE.test(lt)) break;
         if (CODE_FENCE_RE.test(lt)) break;
@@ -474,6 +525,8 @@ export function parseContentBlocks(text: string): ContentBlock[] {
       const pl = lines[i];
       const pt = pl.trimStart();
       if (pt === "") break;
+      if (docstring && paraLines.length > 0 && isDocstringConstruct(lines, i, pt))
+        break;
       if (CODE_FENCE_RE.test(pt)) break;
       if (HEADING_RE.test(pt)) break;
       if (TABLE_RE.test(pt)) break;
@@ -661,6 +714,10 @@ export function wrapBlock(
       return "";
     case "preserved-break":
       return block.line;
+    case "rest-field":
+    case "google-section":
+    case "numpy-section":
+      return wrapDocstringBlock(block, column, tabWidth, doubleSentenceSpacing);
   }
 }
 

@@ -6,6 +6,13 @@ import { parseContentBlocks, wrapBlock } from "./contentBlocks";
 export interface WrapOptions {
   tabWidth?: number;
   doubleSentenceSpacing?: boolean;
+  /**
+   * When true, apply Python docstring-aware parsing (reST field lists, Google
+   * and NumPy sections) in addition to the generic markdown/doc-comment
+   * handling. Enabled only for docstring regions so other content is
+   * unaffected.
+   */
+  docstring?: boolean;
 }
 
 /**
@@ -20,7 +27,8 @@ export function rollText(
   column: number,
   options: WrapOptions = {}
 ): string {
-  const { tabWidth = 4, doubleSentenceSpacing = false } = options;
+  const { tabWidth = 4, doubleSentenceSpacing = false, docstring = false } =
+    options;
 
   // Detect the dominant line-ending style, then normalize to LF for
   // processing. Mixed input is normalized to whichever style dominates;
@@ -28,7 +36,7 @@ export function rollText(
   const useCRLF = prefersCRLF(text);
   const normalized = text.includes("\r\n") ? text.replace(/\r\n/g, "\n") : text;
 
-  const blocks = parseContentBlocks(normalized);
+  const blocks = parseContentBlocks(normalized, { docstring });
   const result = blocks
     .map((b) => wrapBlock(b, column, tabWidth, doubleSentenceSpacing))
     .join("\n");
@@ -90,6 +98,7 @@ export function wrapRegion(
   const wrapped = rollText(innerText, availableWidth, {
     tabWidth,
     doubleSentenceSpacing,
+    docstring: region.kind === "docstring",
   });
 
   // Re-apply the (possibly normalized) prefix to each wrapped line
