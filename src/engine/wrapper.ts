@@ -13,6 +13,11 @@ export interface WrapOptions {
    * unaffected.
    */
   docstring?: boolean;
+  /**
+   * When true, parse the text as a LaTeX document: wrap prose paragraphs while
+   * preserving commands, environments, math, verbatim blocks, and comments.
+   */
+  latex?: boolean;
 }
 
 /**
@@ -27,7 +32,7 @@ export function rollText(
   column: number,
   options: WrapOptions = {}
 ): string {
-  const { tabWidth = 4, doubleSentenceSpacing = false, docstring = false } =
+  const { tabWidth = 4, doubleSentenceSpacing = false, docstring = false, latex = false } =
     options;
 
   // Detect the dominant line-ending style, then normalize to LF for
@@ -36,7 +41,7 @@ export function rollText(
   const useCRLF = prefersCRLF(text);
   const normalized = text.includes("\r\n") ? text.replace(/\r\n/g, "\n") : text;
 
-  const blocks = parseContentBlocks(normalized, { docstring });
+  const blocks = parseContentBlocks(normalized, { docstring, latex });
   const result = blocks
     .map((b) => wrapBlock(b, column, tabWidth, doubleSentenceSpacing))
     .join("\n");

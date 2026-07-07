@@ -866,3 +866,53 @@ describe("resolveWraps — unwrap via UNWRAP_COLUMN", () => {
     expect(edits[0].replacement).toBe("  # a python comment split over lines");
   });
 });
+
+// ── LaTeX document routing ───────────────────────────────────────────
+
+describe("resolveWraps — LaTeX documents", () => {
+  it("wraps prose paragraphs in a selection while preserving commands", () => {
+    const doc = makeDoc(
+      [
+        "\\section{Intro}",
+        "This is a long paragraph of prose that should be wrapped at forty columns wide.",
+        "\\label{sec:intro}",
+      ].join("\n"),
+      "latex"
+    );
+
+    const edits = resolveWraps(doc, [selection(0, 2)], { column: 40 });
+    expect(edits).toHaveLength(1);
+    const lines = edits[0].replacement.split("\n");
+    expect(lines[0]).toBe("\\section{Intro}");
+    expect(lines.at(-1)).toBe("\\label{sec:intro}");
+    // The prose line grew into more than one wrapped line.
+    expect(lines.length).toBeGreaterThan(3);
+  });
+
+  it("preserves a verbatim environment untouched", () => {
+    const doc = makeDoc(
+      [
+        "\\begin{verbatim}",
+        "x = 1    # keep % spacing \\ and $ verbatim",
+        "\\end{verbatim}",
+      ].join("\n"),
+      "latex"
+    );
+
+    const edits = resolveWraps(doc, [selection(0, 2)], { column: 20 });
+    expect(edits).toHaveLength(0);
+  });
+
+  it("also routes the 'tex' language id through LaTeX mode", () => {
+    const doc = makeDoc(
+      "% a long tex comment that should wrap at forty columns wide today here",
+      "tex"
+    );
+
+    const edits = resolveWraps(doc, [emptyCursor(0)], { column: 40 });
+    expect(edits).toHaveLength(1);
+    for (const line of edits[0].replacement.split("\n")) {
+      expect(line).toMatch(/^% /);
+    }
+  });
+});

@@ -47,6 +47,7 @@ export interface WrapContext {
 // ── Main entry point ─────────────────────────────────────────────────
 
 const PLAINTEXT_LANGUAGES = new Set(["plaintext", "markdown"]);
+const LATEX_LANGUAGES = new Set(["latex", "tex"]);
 
 export function resolveWraps(
   document: DocumentLike,
@@ -60,8 +61,11 @@ export function resolveWraps(
     wholeComment = true,
     doubleSentenceSpacing = false,
   } = context;
-  const wrapOpts: WrapOptions = { tabWidth, doubleSentenceSpacing };
-  const isPlaintext = PLAINTEXT_LANGUAGES.has(document.languageId);
+  const isLatex = LATEX_LANGUAGES.has(document.languageId);
+  const wrapOpts: WrapOptions = { tabWidth, doubleSentenceSpacing, latex: isLatex };
+  // LaTeX is a document language: wrap the whole document as prose (with
+  // LaTeX-aware preservation), so it takes the same path as plaintext/markdown.
+  const isPlaintext = PLAINTEXT_LANGUAGES.has(document.languageId) || isLatex;
 
   // For code files, detect all comment regions in the document once
   let allRegions: WrappableRegion[] | null = null;

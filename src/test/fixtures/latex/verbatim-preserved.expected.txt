@@ -1,0 +1,11 @@
+Some prose describing the code listing that follows and is
+long enough to require wrapping at sixty columns.
+
+\begin{verbatim}
+def foo():
+    return    bar   # spacing preserved
+\end{verbatim}
+
+\begin{lstlisting}[language=Python]
+x = 1    # comment with % weird chars \ and $ stay as-is
+\end{lstlisting}

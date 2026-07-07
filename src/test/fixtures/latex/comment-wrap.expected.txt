@@ -1,0 +1,9 @@
+% This is a long LaTeX comment line that describes the
+% following section and should be wrapped at the configured
+% column width. Second comment line that continues the same
+% comment block and also is quite long here.
+
+\section{Body}
+
+Regular prose paragraph here that will also be wrapped when
+it is long enough to exceed sixty columns wide.

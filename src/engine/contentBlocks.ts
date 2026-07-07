@@ -22,6 +22,12 @@ export interface ParseOptions {
    * Google and NumPy sections) in addition to the generic markdown handling.
    */
   docstring?: boolean;
+  /**
+   * When true, parse the text as a LaTeX document: wrap prose paragraphs while
+   * preserving commands, environments, math, verbatim blocks, and comments.
+   * Markdown-specific constructs are not applied in this mode.
+   */
+  latex?: boolean;
 }
 
 // ── Block types ──────────────────────────────────────────────────────
@@ -39,6 +45,8 @@ export type ContentBlock =
   | BlankLineBlock
   | PreservedBreakBlock
   | TableBlock
+  | LatexPreservedBlock
+  | LatexCommentBlock
   | DocstringBlock;
 
 export interface ParagraphBlock {
@@ -126,6 +134,34 @@ export interface PreservedBreakBlock {
 
 export interface TableBlock {
   type: "table";
+  lines: string[];
+}
+
+/**
+ * A run of LaTeX content preserved verbatim: `\begin{env}…\end{env}` blocks
+ * for verbatim/math environments, display/inline math spans (`\[ \]`, `$$ $$`),
+ * standalone command lines (`\section{…}`, `\begin{…}`, `\end{…}`, …), and
+ * prose lines carrying a trailing `%` comment. Lines are never reflowed.
+ */
+export interface LatexPreservedBlock {
+  type: "latex-preserved";
+  lines: string[];
+}
+
+/**
+ * A run of consecutive LaTeX comment lines (each starting with `%`). The marker
+ * (`%`, `%%`, …) and indent are preserved while the prose after the marker is
+ * reflowed to the target column.
+ */
+export interface LatexCommentBlock {
+  type: "latex-comment";
+  /** Leading whitespace before the marker. */
+  indent: string;
+  /** The comment marker itself, e.g. `%` or `%%`. */
+  marker: string;
+  /** Whitespace between marker and content. */
+  spacing: string;
+  /** Content lines with the prefix stripped. */
   lines: string[];
 }
 
@@ -269,6 +305,249 @@ function isDocstringConstruct(
   );
 }
 
+// ── LaTeX detection ──────────────────────────────────────────────────
+
+/**
+ * Environments whose entire `\begin{env}…\end{env}` block is preserved
+ * verbatim: verbatim-style code listings and display-math environments.
+ */
+const LATEX_PRESERVED_ENVIRONMENTS = new Set([
+  // Verbatim / code listings
+  "verbatim",
+  "verbatim*",
+  "Verbatim",
+  "lstlisting",
+  "minted",
+  "alltt",
+  "comment",
+  // Display math
+  "math",
+  "displaymath",
+  "equation",
+  "equation*",
+  "align",
+  "align*",
+  "gather",
+  "gather*",
+  "multline",
+  "multline*",
+  "eqnarray",
+  "eqnarray*",
+  "flalign",
+  "flalign*",
+  "alignat",
+  "alignat*",
+]);
+
+/** Match `\begin{env}` / `\end{env}` at the start of a trimmed line. */
+const LATEX_ENV_RE = /^\\(begin|end)\s*\{([^}]*)\}/;
+/** A trimmed line that begins with a LaTeX control sequence (command). */
+const LATEX_COMMAND_RE = /^\\[a-zA-Z@]+\*?/;
+/** A trimmed line that opens a display-math span (`\[` or `$$`). */
+const LATEX_MATH_OPEN_RE = /^(\\\[|\$\$)/;
+
+/**
+ * Return the index of the first unescaped `%` (LaTeX comment marker) in
+ * `line`, or -1 when there is none. A `%` is escaped when preceded by an odd
+ * number of backslashes (`\%`), so `\\%` is a real comment marker.
+ */
+function latexCommentIndex(line: string): number {
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] !== "%") continue;
+    let backslashes = 0;
+    let j = i - 1;
+    while (j >= 0 && line[j] === "\\") {
+      backslashes++;
+      j--;
+    }
+    if (backslashes % 2 === 0) return i;
+  }
+  return -1;
+}
+
+/** Leading-whitespace length of a line. */
+function indentOf(line: string): number {
+  return line.length - line.trimStart().length;
+}
+
+/**
+ * True when `line` starts a construct that must not be merged into a wrapped
+ * prose paragraph: a comment line, an inline-comment line, a command/boundary
+ * line (`\begin`, `\end`, `\section`, …), or a display-math opener.
+ */
+function isLatexBoundary(line: string): boolean {
+  const indent = indentOf(line);
+  const trimmed = line.slice(indent);
+  if (trimmed === "") return true;
+  if (latexCommentIndex(line) !== -1) return true; // full or inline comment
+  if (LATEX_MATH_OPEN_RE.test(trimmed)) return true;
+  if (LATEX_COMMAND_RE.test(trimmed)) return true;
+  return false;
+}
+
+/**
+ * Parse the LaTeX construct starting at `lines[start]` (guaranteed non-blank),
+ * push exactly one block, and return the index of the next unconsumed line.
+ */
+function parseLatexBlock(
+  lines: string[],
+  start: number,
+  blocks: ContentBlock[]
+): number {
+  const line = lines[start];
+  const indent = indentOf(line);
+  const trimmed = line.slice(indent);
+  const commentIdx = latexCommentIndex(line);
+
+  // 1. Full comment line → gather a comment run.
+  if (commentIdx === indent) {
+    return parseLatexCommentRun(lines, start, indent, blocks);
+  }
+
+  // 2. Preserved environment (verbatim / math) → keep the whole block.
+  const envMatch = LATEX_ENV_RE.exec(trimmed);
+  if (
+    envMatch &&
+    envMatch[1] === "begin" &&
+    LATEX_PRESERVED_ENVIRONMENTS.has(envMatch[2].trim())
+  ) {
+    return parseLatexEnvironment(lines, start, envMatch[2].trim(), blocks);
+  }
+
+  // 3. Display-math span (`\[ … \]` or `$$ … $$`).
+  if (LATEX_MATH_OPEN_RE.test(trimmed)) {
+    return parseLatexMath(lines, start, trimmed, blocks);
+  }
+
+  // 4. Command / boundary line (`\begin{…}` of a non-preserved env, `\end{…}`,
+  //    `\section{…}`, `\usepackage…`, …) → preserved on its own line.
+  if (LATEX_COMMAND_RE.test(trimmed)) {
+    blocks.push({ type: "latex-preserved", lines: [line] });
+    return start + 1;
+  }
+
+  // 5. Prose line carrying a trailing inline `%` comment → preserved as-is.
+  if (commentIdx > indent) {
+    blocks.push({ type: "latex-preserved", lines: [line] });
+    return start + 1;
+  }
+
+  // 6. Prose paragraph → gather until the next boundary or blank line.
+  const paraLines: string[] = [line];
+  let i = start + 1;
+  while (i < lines.length) {
+    const pl = lines[i];
+    if (pl.trimStart() === "") break;
+    if (isLatexBoundary(pl)) break;
+    paraLines.push(pl);
+    i++;
+  }
+  blocks.push({ type: "paragraph", lines: paraLines });
+  return i;
+}
+
+/** Collect consecutive comment lines sharing the same indent and marker. */
+function parseLatexCommentRun(
+  lines: string[],
+  start: number,
+  indent: number,
+  blocks: ContentBlock[]
+): number {
+  const first = lines[start];
+  const markerMatch = /^%+/.exec(first.slice(indent));
+  const marker = markerMatch![0];
+  const prefixLen = indent + marker.length;
+
+  const stripContent = (line: string): string => {
+    let rest = line.slice(prefixLen);
+    if (rest.startsWith(" ")) rest = rest.slice(1);
+    return rest;
+  };
+
+  // Spacing is derived from the first line: `% text` → " ", `%text` → "".
+  const spacing = first.slice(prefixLen).startsWith(" ") ? " " : "";
+
+  const content: string[] = [stripContent(first)];
+  let i = start + 1;
+  while (i < lines.length) {
+    const line = lines[i];
+    const lineIndent = indentOf(line);
+    if (lineIndent !== indent) break;
+    if (latexCommentIndex(line) !== lineIndent) break;
+    const nextMarker = /^%+/.exec(line.slice(lineIndent))![0];
+    if (nextMarker !== marker) break;
+    content.push(stripContent(line));
+    i++;
+  }
+
+  blocks.push({
+    type: "latex-comment",
+    indent: " ".repeat(indent),
+    marker,
+    spacing,
+    lines: content,
+  });
+  return i;
+}
+
+/**
+ * Collect a preserved `\begin{env}…\end{env}` block, honoring nesting of the
+ * same environment name. Runs to end-of-input if the closer is missing.
+ */
+function parseLatexEnvironment(
+  lines: string[],
+  start: number,
+  env: string,
+  blocks: ContentBlock[]
+): number {
+  const collected: string[] = [lines[start]];
+  let depth = 1;
+  let i = start + 1;
+  for (; i < lines.length; i++) {
+    collected.push(lines[i]);
+    const m = LATEX_ENV_RE.exec(lines[i].trimStart());
+    if (m && m[2].trim() === env) {
+      if (m[1] === "begin") depth++;
+      else if (--depth === 0) {
+        i++;
+        break;
+      }
+    }
+  }
+  blocks.push({ type: "latex-preserved", lines: collected });
+  return i;
+}
+
+/** Collect a display-math span opened by `\[` or `$$`. */
+function parseLatexMath(
+  lines: string[],
+  start: number,
+  trimmed: string,
+  blocks: ContentBlock[]
+): number {
+  const opener = trimmed.startsWith("\\[") ? "\\[" : "$$";
+  const closer = opener === "\\[" ? "\\]" : "$$";
+  const afterOpener = trimmed.slice(opener.length);
+
+  // Single-line span: opener and closer on the same line.
+  if (afterOpener.includes(closer)) {
+    blocks.push({ type: "latex-preserved", lines: [lines[start]] });
+    return start + 1;
+  }
+
+  const collected: string[] = [lines[start]];
+  let i = start + 1;
+  for (; i < lines.length; i++) {
+    collected.push(lines[i]);
+    if (lines[i].includes(closer)) {
+      i++;
+      break;
+    }
+  }
+  blocks.push({ type: "latex-preserved", lines: collected });
+  return i;
+}
+
 /**
  * Parse text into a sequence of content blocks.
  * Best-effort detection of markdown-like structures.
@@ -277,7 +556,7 @@ export function parseContentBlocks(
   text: string,
   options: ParseOptions = {}
 ): ContentBlock[] {
-  const { docstring = false } = options;
+  const { docstring = false, latex = false } = options;
   const lines = text.split("\n");
   const blocks: ContentBlock[] = [];
   let i = 0;
@@ -297,6 +576,15 @@ export function parseContentBlocks(
       continue;
     }
     prevWasBlank = false;
+
+    // ── LaTeX document mode ────────────────────────────────────
+    // LaTeX has its own structural grammar (commands, environments, math,
+    // comments) that is unrelated to Markdown, so it is handled by a
+    // dedicated parser and never falls through to the Markdown detectors.
+    if (latex) {
+      i = parseLatexBlock(lines, i, blocks);
+      continue;
+    }
 
     // ── Python docstring constructs (reST / Google / NumPy) ────
     if (docstring) {
@@ -705,6 +993,10 @@ export function wrapBlock(
     case "indented-code":
     case "table":
       return block.lines.join("\n");
+    case "latex-preserved":
+      return block.lines.join("\n");
+    case "latex-comment":
+      return wrapLatexComment(block, column, tabWidth, doubleSentenceSpacing);
     case "heading":
       return block.line;
     case "blockquote":
@@ -738,6 +1030,31 @@ function wrapParagraph(
     tabWidth,
     doubleSentenceSpacing
   ).join("\n");
+}
+
+/**
+ * Wrap a LaTeX comment run: strip the `%` marker + indent, reflow the prose
+ * (blank comment lines act as paragraph breaks), then re-apply the prefix.
+ */
+function wrapLatexComment(
+  block: LatexCommentBlock,
+  column: number,
+  tabWidth: number,
+  doubleSentenceSpacing: boolean
+): string {
+  const prefix = block.indent + block.marker + block.spacing;
+  const bare = block.indent + block.marker;
+  const availableWidth = Math.max(1, column - displayWidth(prefix, tabWidth));
+
+  const innerBlocks = parseContentBlocks(block.lines.join("\n"));
+  const wrapped = innerBlocks
+    .map((b) => wrapBlock(b, availableWidth, tabWidth, doubleSentenceSpacing))
+    .join("\n");
+
+  return wrapped
+    .split("\n")
+    .map((l) => (l ? prefix + l : bare))
+    .join("\n");
 }
 
 function wrapListItem(
