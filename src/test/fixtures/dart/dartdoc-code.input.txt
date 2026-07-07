@@ -1,0 +1,8 @@
+Creates a client bound to [baseUrl].
+
+```dart
+final client = ApiClient(baseUrl: 'https://api.example.com');
+final user = await client.fetchUser(42);
+```
+
+The client reuses a single connection pool for all outgoing requests.

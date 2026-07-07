@@ -66,4 +66,19 @@ describe("language registry", () => {
     expect(getLanguage("vb")!.lineComments).toContain("'");
     expect(getLanguage("vb")!.docComments?.line).toContain("'''");
   });
+
+  it("registers Dart and looks it up by ID and extension", () => {
+    expect(getLanguage("dart")).toBeDefined();
+    expect(getLanguage("dart")!.id).toBe("dart");
+    expect(getLanguageByExtension(".dart")?.id).toBe("dart");
+    expect(getLanguage("dart")!.lineComments).toContain("//");
+    expect(getLanguage("dart")!.docComments?.line).toContain("///");
+  });
+
+  it("recognizes Rustdoc /// and //! doc-comment markers", () => {
+    const rust = getLanguage("rust");
+    expect(rust).toBeDefined();
+    expect(rust!.docComments?.line).toContain("///");
+    expect(rust!.docComments?.line).toContain("//!");
+  });
 });

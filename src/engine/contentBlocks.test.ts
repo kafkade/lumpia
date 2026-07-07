@@ -265,6 +265,16 @@ describe("parseContentBlocks", () => {
     expect(blocks[0].type).toBe("paragraph");
   });
 
+  it("detects tab-indented code after blank line (Godoc)", () => {
+    const text = "paragraph\n\n\tcode line 1\n\tcode line 2";
+    const blocks = parseContentBlocks(text);
+    const codeBlock = blocks.find((b) => b.type === "indented-code");
+    expect(codeBlock).toBeDefined();
+    if (codeBlock?.type === "indented-code") {
+      expect(codeBlock.lines).toEqual(["\tcode line 1", "\tcode line 2"]);
+    }
+  });
+
   it("handles empty string", () => {
     const blocks = parseContentBlocks("");
     expect(blocks).toHaveLength(1);

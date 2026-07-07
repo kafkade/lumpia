@@ -576,6 +576,40 @@ const fixtures: FixtureDef[] = [
       "encoding/json. It returns an error if v cannot be represented as valid JSON.",
     ].join("\n"),
   },
+  {
+    category: "go",
+    name: "godoc-code-example",
+    column: 60,
+    input: [
+      "Fprintf formats according to a format specifier and writes to w.",
+      "",
+      "It returns the number of bytes written and any write error encountered during the call.",
+      "",
+      "\tn, err := fmt.Fprintf(w, \"%s: %d\\n\", label, count)",
+      "\tif err != nil {",
+      "\t\treturn err",
+      "\t}",
+      "",
+      "The verbs are the same as those understood by Printf.",
+    ].join("\n"),
+  },
+  {
+    category: "go",
+    name: "godoc-headings-list",
+    column: 60,
+    input: [
+      "Package hash provides interfaces for hash functions.",
+      "",
+      "# Overview",
+      "",
+      "A Hash is a common interface implemented by every hash function in this package. Hash implementations are not safe for concurrent use.",
+      "",
+      "Supported algorithms:",
+      "",
+      "  - SHA-256: the default general-purpose cryptographic hash function",
+      "  - CRC-32: a fast non-cryptographic checksum used for integrity checks",
+    ].join("\n"),
+  },
 
   // ═══════════════════════════════════════════════════════════════════
   // rust/ — inner content from Rust doc comments
@@ -674,6 +708,65 @@ const fixtures: FixtureDef[] = [
     name: "doc-noop",
     column: 80,
     input: "Returns the current count.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // dart/ — inner content from Dart doc comments (///)
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "dart",
+    name: "dartdoc-simple",
+    column: 60,
+    input:
+      "Returns a new [Duration] representing the sum of this duration and the given [other] duration measured in whole microseconds",
+  },
+  {
+    category: "dart",
+    name: "dartdoc-refs",
+    column: 60,
+    input: [
+      "Fetches the [User] for the given [id].",
+      "",
+      "Throws a [NotFoundException] if no matching user exists. See [UserRepository.findById] for the underlying lookup and caching semantics used by this method.",
+    ].join("\n"),
+  },
+  {
+    category: "dart",
+    name: "dartdoc-code",
+    column: 60,
+    input: [
+      "Creates a client bound to [baseUrl].",
+      "",
+      "```dart",
+      "final client = ApiClient(baseUrl: 'https://api.example.com');",
+      "final user = await client.fetchUser(42);",
+      "```",
+      "",
+      "The client reuses a single connection pool for all outgoing requests.",
+    ].join("\n"),
+  },
+  {
+    category: "dart",
+    name: "dartdoc-mixed",
+    column: 60,
+    input: [
+      "Parses the raw [input] into a structured document.",
+      "",
+      "## Parameters",
+      "",
+      "- [input]: the raw source text that will be parsed into tokens",
+      "- [strict]: when true, unknown tags raise a [ParseError] immediately",
+      "",
+      "## Returns",
+      "",
+      "A fully materialized [Document] instance ready for traversal.",
+    ].join("\n"),
+  },
+  {
+    category: "dart",
+    name: "dartdoc-noop",
+    column: 80,
+    input: "Returns the number of active subscriptions.",
   },
 
   // ═══════════════════════════════════════════════════════════════════

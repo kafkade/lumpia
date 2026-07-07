@@ -1,0 +1,5 @@
+Fetches the [User] for the given [id].
+
+Throws a [NotFoundException] if no matching user exists. See
+[UserRepository.findById] for the underlying lookup and
+caching semantics used by this method.
