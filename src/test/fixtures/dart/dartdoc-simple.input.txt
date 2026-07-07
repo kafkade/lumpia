@@ -1,0 +1,1 @@
+Returns a new [Duration] representing the sum of this duration and the given [other] duration measured in whole microseconds

@@ -132,6 +132,8 @@ export interface TableBlock {
 // ── Detection patterns ───────────────────────────────────────────────
 
 const CODE_FENCE_RE = /^(`{3,}|~{3,})/;
+/** Indented code block: 4+ leading spaces or a leading tab (gofmt/CommonMark). */
+const INDENTED_CODE_RE = /^(?:\t| {4,})/;
 const HEADING_RE = /^#{1,6}(?:\s|$)/;
 const TABLE_RE = /^\|.*\|/;
 const BLOCKQUOTE_RE = /^(>\s?)/;
@@ -483,15 +485,18 @@ export function parseContentBlocks(
       continue;
     }
 
-    // ── Indented code (4+ spaces after blank line) ─────────────
+    // ── Indented code (4+ spaces or a leading tab after blank line) ──
+    // A tab-indented block is gofmt's convention for Godoc code examples;
+    // 4+ spaces is the CommonMark form used by Rustdoc/Dartdoc/Markdown.
     if (
       blocks.length > 0 &&
       blocks[blocks.length - 1].type === "blank-line" &&
-      /^ {4,}\S/.test(line)
+      INDENTED_CODE_RE.test(line) &&
+      line.trim() !== ""
     ) {
       const codeLines: string[] = [];
       while (i < lines.length) {
-        if (/^ {4,}/.test(lines[i]) || lines[i].trim() === "") {
+        if (INDENTED_CODE_RE.test(lines[i]) || lines[i].trim() === "") {
           codeLines.push(lines[i]);
           i++;
         } else {

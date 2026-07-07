@@ -229,6 +229,36 @@ describe("Rust", () => {
   });
 });
 
+// ─── Dart ────────────────────────────────────────────────────────────
+
+describe("Dart", () => {
+  it("detects // line comment", () => {
+    const r = getRegions("// dart comment", "dart");
+    expect(r).toHaveLength(1);
+    expect(r[0].kind).toBe("line-comment");
+  });
+
+  it("detects /// doc comment run", () => {
+    const r = getRegions("/// Doc comment\n/// more docs", "dart");
+    expect(r).toHaveLength(1);
+    expect(r[0].kind).toBe("doc-comment");
+    expect(prefixToString(r[0].prefix)).toBe("/// ");
+  });
+
+  it("detects /** */ block doc comment", () => {
+    const r = getRegions("/**\n * block doc\n */", "dart");
+    expect(r).toHaveLength(1);
+    expect(r[0].kind).toBe("doc-comment");
+  });
+
+  it("distinguishes /// from // correctly", () => {
+    const r = getRegions("/// doc\n// regular", "dart");
+    expect(r).toHaveLength(2);
+    expect(r[0].kind).toBe("doc-comment");
+    expect(r[1].kind).toBe("line-comment");
+  });
+});
+
 // ─── C / C++ ─────────────────────────────────────────────────────────
 
 describe("C", () => {

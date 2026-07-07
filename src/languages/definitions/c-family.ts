@@ -71,6 +71,15 @@ export const csharp: LanguageDefinition = {
   docComments: { line: ["///"] },
 };
 
+export const dart: LanguageDefinition = {
+  id: "dart",
+  aliases: [],
+  extensions: [".dart"],
+  lineComments: ["//"],
+  blockComments: [["/*", "*/"]],
+  docComments: { line: ["///"], block: ["/**", "*/"] },
+};
+
 export const cFamilyLanguages: LanguageDefinition[] = [
   typescript,
   javascript,
@@ -80,4 +89,5 @@ export const cFamilyLanguages: LanguageDefinition[] = [
   cpp,
   java,
   csharp,
+  dart,
 ];
