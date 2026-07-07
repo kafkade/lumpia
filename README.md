@@ -49,4 +49,6 @@ the global value:
 
 Select the entire document (`Ctrl+A`) and press `Alt+R` to wrap the whole file
 at once. In code files only comments and docstrings are rolled — your code is
-never modified. In Markdown and plaintext files every paragraph is wrapped.
+never modified. In Markdown and plaintext files every paragraph is wrapped. In
+LaTeX files (`.tex`, `.sty`, `.cls`) prose paragraphs are wrapped while
+commands, environments, math, verbatim blocks, and comments are preserved.

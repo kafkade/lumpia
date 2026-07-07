@@ -4,6 +4,16 @@
 
 ### Added
 
+- LaTeX document support (`.tex`, `.sty`, `.cls`): source with the `latex` or
+  `tex` language ID now wraps as a document. Prose paragraphs between commands
+  reflow to the target column, while structure is preserved: `\begin{…}` /
+  `\end{…}` and standalone command lines stay on their own lines (prose inside
+  non-verbatim environments still wraps), verbatim/listing environments
+  (`verbatim`, `lstlisting`, `minted`, …) and display-math environments
+  (`equation`, `align`, `gather`, …) are kept verbatim, and display math spans
+  (`\[ \]`, `$$ … $$`) are preserved. `%` comment runs are detected and
+  wrapped with their marker preserved; a prose line carrying a trailing `%`
+  comment is left intact (escaped `\%` is treated as normal text).
 - Dart language support (`.dart`): Dartdoc `///` line doc comments and `/** */`
   block doc comments are now recognized and wrapped as Markdown, so cross-reference
   links (`[Class]`, `[method]`) and fenced code examples are preserved while prose
