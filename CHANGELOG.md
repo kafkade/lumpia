@@ -4,6 +4,19 @@
 
 ### Added
 
+- Tier 2 language support: basic comment-aware wrapping for 24 additional
+  languages — PHP (`.php`/`.phtml`), Swift (`.swift`), Kotlin (`.kt`/`.kts`),
+  Scala (`.scala`/`.sc`), Groovy (`.groovy`/`.gradle`), Objective-C
+  (`.m`/`.mm`), Perl (`.pl`/`.pm`/`.t`), R (`.r`/`.R`), Julia (`.jl`), Elixir
+  (`.ex`/`.exs`), Erlang (`.erl`/`.hrl`), Clojure (`.clj`/`.cljs`/`.cljc`/
+  `.edn`), YAML (`.yaml`/`.yml`), TOML (`.toml`), INI (`.ini`/`.cfg`),
+  Dockerfile, Makefile (`.mk`), PowerShell (`.ps1`/`.psm1`/`.psd1`),
+  CoffeeScript (`.coffee`), Lua (`.lua`), SQL (`.sql`), Haskell (`.hs`), Elm
+  (`.elm`), and Pascal (`.pas`/`.pp`). Line and block comment markers are
+  recognized per language (e.g. Lua `--[[ ]]`, Julia `#= =#`, PowerShell
+  `<# #>`, Haskell/Elm `{- -}`, Pascal `{ }` and `(* *)`), with light
+  doc-comment handling where idiomatic (Swift `///`, KDoc/Groovy/PHP
+  `/** */`, Elm `{-| -}`, R roxygen `#'`).
 - LaTeX document support (`.tex`, `.sty`, `.cls`): source with the `latex` or
   `tex` language ID now wraps as a document. Prose paragraphs between commands
   reflow to the target column, while structure is preserved: `\begin{…}` /

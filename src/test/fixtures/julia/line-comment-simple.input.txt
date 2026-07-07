@@ -1,0 +1,1 @@
+Computes the eigenvalues of the given square matrix using an in place algorithm that avoids extra allocation

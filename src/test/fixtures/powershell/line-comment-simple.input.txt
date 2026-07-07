@@ -1,0 +1,1 @@
+Retrieves the collection of running services and filters them down to only those configured to start automatically

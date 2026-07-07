@@ -1,0 +1,1 @@
+Registers the observer for key value observing notifications on the specified key path of the receiver object

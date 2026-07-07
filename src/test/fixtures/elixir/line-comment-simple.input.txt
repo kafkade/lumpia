@@ -1,0 +1,1 @@
+Spawns a supervised worker process and links it to the current supervisor so failures are restarted cleanly

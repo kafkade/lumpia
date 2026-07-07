@@ -81,4 +81,69 @@ describe("language registry", () => {
     expect(rust!.docComments?.line).toContain("///");
     expect(rust!.docComments?.line).toContain("//!");
   });
+
+  it("registers all Tier 2 languages by ID", () => {
+    const ids = registeredIds();
+    const tier2 = [
+      "php", "swift", "kotlin", "scala", "groovy", "objective-c",
+      "perl", "r", "julia", "elixir", "erlang", "clojure",
+      "yaml", "toml", "ini", "dockerfile", "makefile", "powershell",
+      "coffeescript", "lua", "sql", "haskell", "elm", "pascal",
+    ];
+    for (const id of tier2) {
+      expect(ids).toContain(id);
+    }
+  });
+
+  it("looks up Tier 2 languages by extension", () => {
+    const cases: [string, string][] = [
+      [".php", "php"],
+      [".swift", "swift"],
+      [".kt", "kotlin"],
+      [".scala", "scala"],
+      [".gradle", "groovy"],
+      [".mm", "objective-c"],
+      [".pl", "perl"],
+      [".R", "r"],
+      [".jl", "julia"],
+      [".exs", "elixir"],
+      [".erl", "erlang"],
+      [".cljc", "clojure"],
+      [".yml", "yaml"],
+      [".toml", "toml"],
+      [".ini", "ini"],
+      [".dockerfile", "dockerfile"],
+      [".mk", "makefile"],
+      [".ps1", "powershell"],
+      [".coffee", "coffeescript"],
+      [".lua", "lua"],
+      [".sql", "sql"],
+      [".hs", "haskell"],
+      [".elm", "elm"],
+      [".pas", "pascal"],
+    ];
+    for (const [ext, id] of cases) {
+      expect(getLanguageByExtension(ext)?.id).toBe(id);
+    }
+  });
+
+  it("resolves Tier 2 aliases", () => {
+    expect(getLanguage("objective-cpp")?.id).toBe("objective-c");
+    expect(getLanguage("objectpascal")?.id).toBe("pascal");
+  });
+
+  it("defines expected comment markers for representative Tier 2 languages", () => {
+    expect(getLanguage("swift")!.docComments?.line).toContain("///");
+    expect(getLanguage("php")!.lineComments).toEqual(["//", "#"]);
+    expect(getLanguage("lua")!.blockComments).toContainEqual(["--[[", "]]"]);
+    expect(getLanguage("julia")!.blockComments).toContainEqual(["#=", "=#"]);
+    expect(getLanguage("powershell")!.blockComments).toContainEqual(["<#", "#>"]);
+    expect(getLanguage("haskell")!.blockComments).toContainEqual(["{-", "-}"]);
+    expect(getLanguage("elm")!.docComments?.block).toEqual(["{-|", "-}"]);
+    expect(getLanguage("erlang")!.lineComments).toEqual(["%"]);
+    expect(getLanguage("clojure")!.lineComments).toEqual([";"]);
+    expect(getLanguage("ini")!.lineComments).toEqual([";", "#"]);
+    expect(getLanguage("r")!.docComments?.line).toContain("#'");
+    expect(getLanguage("pascal")!.blockComments).toContainEqual(["(*", "*)"]);
+  });
 });

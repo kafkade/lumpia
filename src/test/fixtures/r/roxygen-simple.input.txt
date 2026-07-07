@@ -1,0 +1,1 @@
+Fits a generalized linear model to the supplied data frame and returns the fitted model object for inspection

@@ -1,0 +1,1 @@
+Declares the build dependencies required to compile the project along with their exact pinned version ranges
