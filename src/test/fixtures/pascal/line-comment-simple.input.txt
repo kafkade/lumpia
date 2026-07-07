@@ -1,0 +1,1 @@
+Allocates a new record on the heap and initializes each field to its default value before returning the pointer

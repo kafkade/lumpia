@@ -1,0 +1,1 @@
+Configures the Gradle task graph so that the packaging step always runs after the compilation step completes

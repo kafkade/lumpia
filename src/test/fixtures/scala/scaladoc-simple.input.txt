@@ -1,0 +1,1 @@
+Folds the collection from the left, applying the binary operator to an accumulator and each element in turn

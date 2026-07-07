@@ -479,3 +479,126 @@ describe("CSS", () => {
     expect(r).toHaveLength(0);
   });
 });
+
+// ─── Tier 2 languages ────────────────────────────────────────────────
+
+describe("Tier 2 curly-brace languages", () => {
+  it("PHP detects // and # line comments and /** */ doc", () => {
+    expect(getRegions("// php comment", "php")[0].kind).toBe("line-comment");
+    expect(getRegions("# php hash comment", "php")[0].kind).toBe("line-comment");
+    expect(getRegions("/**\n * doc\n */", "php")[0].kind).toBe("doc-comment");
+  });
+
+  it("Swift detects /// doc and // line comments", () => {
+    expect(getRegions("/// doc\n/// more", "swift")[0].kind).toBe("doc-comment");
+    expect(getRegions("// plain", "swift")[0].kind).toBe("line-comment");
+  });
+
+  it("Kotlin detects /** */ KDoc", () => {
+    expect(getRegions("/**\n * kdoc\n */", "kotlin")[0].kind).toBe("doc-comment");
+  });
+
+  it("Scala detects // line comments", () => {
+    expect(getRegions("// scala", "scala")[0].kind).toBe("line-comment");
+  });
+
+  it("Groovy detects /* */ block comments", () => {
+    expect(getRegions("/*\n * body\n */", "groovy")[0].kind).toBe("block-comment");
+  });
+
+  it("Objective-C detects // comments via objective-cpp alias", () => {
+    expect(getRegions("// objc", "objective-cpp")[0].kind).toBe("line-comment");
+  });
+});
+
+describe("Tier 2 hash/semicolon languages", () => {
+  it("Perl detects # line comments", () => {
+    const r = getRegions("# perl comment", "perl");
+    expect(r).toHaveLength(1);
+    expect(r[0].kind).toBe("line-comment");
+  });
+
+  it("R detects #' roxygen doc comments", () => {
+    const r = getRegions("#' roxygen\n#' docs", "r");
+    expect(r[0].kind).toBe("doc-comment");
+    expect(r[0].prefix.marker).toBe("#'");
+  });
+
+  it("Julia detects #= =# block comments", () => {
+    expect(getRegions("#=\n body\n=#", "julia")[0].kind).toBe("block-comment");
+  });
+
+  it("Elixir detects # line comments", () => {
+    expect(getRegions("# elixir", "elixir")[0].kind).toBe("line-comment");
+  });
+
+  it("Erlang detects % line comments", () => {
+    const r = getRegions("% erlang comment", "erlang");
+    expect(r).toHaveLength(1);
+    expect(prefixToString(r[0].prefix)).toBe("% ");
+  });
+
+  it("Clojure detects ; line comments", () => {
+    const r = getRegions("; clojure", "clojure");
+    expect(r[0].kind).toBe("line-comment");
+    expect(r[0].prefix.marker).toBe(";");
+  });
+
+  it("YAML detects # line comments", () => {
+    expect(getRegions("# yaml", "yaml")[0].kind).toBe("line-comment");
+  });
+
+  it("TOML detects # line comments", () => {
+    expect(getRegions("# toml", "toml")[0].kind).toBe("line-comment");
+  });
+
+  it("INI detects ; and # line comments", () => {
+    expect(getRegions("; ini", "ini")[0].prefix.marker).toBe(";");
+    expect(getRegions("# ini", "ini")[0].prefix.marker).toBe("#");
+  });
+
+  it("Dockerfile detects # line comments", () => {
+    expect(getRegions("# dockerfile", "dockerfile")[0].kind).toBe("line-comment");
+  });
+
+  it("Makefile detects # line comments", () => {
+    expect(getRegions("# makefile", "makefile")[0].kind).toBe("line-comment");
+  });
+
+  it("PowerShell detects # line and <# #> block comments", () => {
+    expect(getRegions("# ps", "powershell")[0].kind).toBe("line-comment");
+    expect(getRegions("<#\n body\n#>", "powershell")[0].kind).toBe("block-comment");
+  });
+
+  it("CoffeeScript detects # line and ### block comments", () => {
+    expect(getRegions("# coffee", "coffeescript")[0].kind).toBe("line-comment");
+    expect(getRegions("###\n body\n###", "coffeescript")[0].kind).toBe("block-comment");
+  });
+});
+
+describe("Tier 2 dash languages", () => {
+  it("Lua detects -- line and --[[ ]] block comments", () => {
+    expect(getRegions("-- lua", "lua")[0].kind).toBe("line-comment");
+    expect(getRegions("--[[\n body\n]]", "lua")[0].kind).toBe("block-comment");
+  });
+
+  it("SQL detects -- line and /* */ block comments", () => {
+    expect(getRegions("-- sql", "sql")[0].kind).toBe("line-comment");
+    expect(getRegions("/*\n * body\n */", "sql")[0].kind).toBe("block-comment");
+  });
+
+  it("Haskell detects -- line and {- -} block comments", () => {
+    expect(getRegions("-- haskell", "haskell")[0].kind).toBe("line-comment");
+    expect(getRegions("{-\n body\n-}", "haskell")[0].kind).toBe("block-comment");
+  });
+
+  it("Elm detects {-| -} doc comments", () => {
+    expect(getRegions("{-|\n doc\n-}", "elm")[0].kind).toBe("doc-comment");
+  });
+
+  it("Pascal detects // line and { } / (* *) block comments", () => {
+    expect(getRegions("// pascal", "pascal")[0].kind).toBe("line-comment");
+    expect(getRegions("{\n body\n}", "pascal")[0].kind).toBe("block-comment");
+    expect(getRegions("(*\n body\n*)", "pascal")[0].kind).toBe("block-comment");
+  });
+});

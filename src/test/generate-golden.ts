@@ -1326,6 +1326,178 @@ const fixtures: FixtureDef[] = [
     input:
       "Returns the number of elements currently stored.\nThis call never throws.",
   },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Tier 2 languages — inner comment content wrapping
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "php",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Sanitizes the incoming request payload before it is handed off to the persistence layer for storage",
+  },
+  {
+    category: "swift",
+    name: "doc-comment-simple",
+    column: 50,
+    input:
+      "Returns a new array containing the elements that satisfy the given predicate closure in their original order",
+  },
+  {
+    category: "kotlin",
+    name: "kdoc-simple",
+    column: 50,
+    input:
+      "Launches a new coroutine on the provided dispatcher and returns a Job handle that can be used to cancel it",
+  },
+  {
+    category: "scala",
+    name: "scaladoc-simple",
+    column: 50,
+    input:
+      "Folds the collection from the left, applying the binary operator to an accumulator and each element in turn",
+  },
+  {
+    category: "groovy",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Configures the Gradle task graph so that the packaging step always runs after the compilation step completes",
+  },
+  {
+    category: "objective-c",
+    name: "doc-comment-simple",
+    column: 50,
+    input:
+      "Registers the observer for key value observing notifications on the specified key path of the receiver object",
+  },
+  {
+    category: "perl",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Reads the entire file into memory and splits it into records using the configured input record separator",
+  },
+  {
+    category: "r",
+    name: "roxygen-simple",
+    column: 50,
+    input:
+      "Fits a generalized linear model to the supplied data frame and returns the fitted model object for inspection",
+  },
+  {
+    category: "julia",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Computes the eigenvalues of the given square matrix using an in place algorithm that avoids extra allocation",
+  },
+  {
+    category: "elixir",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Spawns a supervised worker process and links it to the current supervisor so failures are restarted cleanly",
+  },
+  {
+    category: "erlang",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Sends the message asynchronously to the named gen server and returns immediately without awaiting a reply",
+  },
+  {
+    category: "clojure",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Transforms the input sequence lazily by mapping the function across every element and filtering the results",
+  },
+  {
+    category: "yaml",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Defines the deployment replica count and the resource limits applied to every pod created by this workload",
+  },
+  {
+    category: "toml",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Declares the build dependencies required to compile the project along with their exact pinned version ranges",
+  },
+  {
+    category: "ini",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Controls how often the background daemon flushes its write buffer to disk measured in whole seconds per cycle",
+  },
+  {
+    category: "dockerfile",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Installs the runtime dependencies in a single layer and clears the package cache to keep the image size small",
+  },
+  {
+    category: "makefile",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Rebuilds every object file whose source has changed and then relinks the final executable from the fresh objects",
+  },
+  {
+    category: "powershell",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Retrieves the collection of running services and filters them down to only those configured to start automatically",
+  },
+  {
+    category: "coffeescript",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Debounces the resize handler so the expensive layout recalculation only runs once the window stops changing size",
+  },
+  {
+    category: "lua",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Iterates over the table in an unspecified order and invokes the callback with each key and value pair encountered",
+  },
+  {
+    category: "sql",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Selects every order placed within the last thirty days and joins it against the customer table for the report",
+  },
+  {
+    category: "haskell",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Traverses the list applying the effectful action to each element and collecting the results inside the monad",
+  },
+  {
+    category: "elm",
+    name: "doc-comment-simple",
+    column: 50,
+    input:
+      "Updates the application model in response to the incoming message and returns the new model with any commands",
+  },
+  {
+    category: "pascal",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Allocates a new record on the heap and initializes each field to its default value before returning the pointer",
+  },
 ];
 
 // ── Generate ─────────────────────────────────────────────────────────

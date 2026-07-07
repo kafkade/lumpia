@@ -1,0 +1,3 @@
+Controls how often the background daemon flushes
+its write buffer to disk measured in whole seconds
+per cycle

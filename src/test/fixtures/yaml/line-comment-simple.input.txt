@@ -1,0 +1,1 @@
+Defines the deployment replica count and the resource limits applied to every pod created by this workload

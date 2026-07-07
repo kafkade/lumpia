@@ -1,0 +1,1 @@
+Iterates over the table in an unspecified order and invokes the callback with each key and value pair encountered

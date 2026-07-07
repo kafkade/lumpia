@@ -1,0 +1,1 @@
+Reads the entire file into memory and splits it into records using the configured input record separator

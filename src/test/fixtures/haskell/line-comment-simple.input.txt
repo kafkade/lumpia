@@ -1,0 +1,1 @@
+Traverses the list applying the effectful action to each element and collecting the results inside the monad
