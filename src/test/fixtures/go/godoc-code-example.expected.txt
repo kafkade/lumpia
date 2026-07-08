@@ -1,0 +1,12 @@
+Fprintf formats according to a format specifier and writes
+to w.
+
+It returns the number of bytes written and any write error
+encountered during the call.
+
+	n, err := fmt.Fprintf(w, "%s: %d\n", label, count)
+	if err != nil {
+		return err
+	}
+
+The verbs are the same as those understood by Printf.

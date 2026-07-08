@@ -2,6 +2,10 @@ import type { LanguageDefinition } from "./types";
 import { cFamilyLanguages } from "./definitions/c-family";
 import { scriptFamilyLanguages } from "./definitions/script-family";
 import { styleLanguages } from "./definitions/styles";
+import { dotnetFamilyLanguages } from "./definitions/dotnet-family";
+import { curlyFamilyLanguages } from "./definitions/curly-family";
+import { hashFamilyLanguages } from "./definitions/hash-family";
+import { dashFamilyLanguages } from "./definitions/dash-family";
 
 const byId = new Map<string, LanguageDefinition>();
 
@@ -17,6 +21,10 @@ for (const def of [
   ...cFamilyLanguages,
   ...scriptFamilyLanguages,
   ...styleLanguages,
+  ...dotnetFamilyLanguages,
+  ...curlyFamilyLanguages,
+  ...hashFamilyLanguages,
+  ...dashFamilyLanguages,
 ]) {
   register(def);
 }

@@ -1,0 +1,6 @@
+Process a batch of records from the input queue.
+
+:param records: The list of record objects to process in this batch iteration
+:param timeout: Maximum time in seconds to wait for each record to be processed
+:returns: The number of successfully processed records
+:raises ValueError: If the timeout is negative or is not a valid integer value

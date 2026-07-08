@@ -1,0 +1,4 @@
+<remarks>
+Call <c>await</c> on the returned task before the
+connection is disposed by the pool manager.
+</remarks>

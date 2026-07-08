@@ -1,0 +1,8 @@
+This paragraph has a normal first line that is long enough
+to be wrapped across the sixty column boundary here today. A
+price of 50\% is escaped and should wrap as normal prose
+without being treated as a comment at all here.
+This line ends with a real inline comment. % TODO: revise this sentence later on
+
+Another paragraph after the inline comment that should wrap
+normally across multiple lines when it is long enough.

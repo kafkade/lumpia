@@ -1,0 +1,10 @@
+Parses the raw [input] into a structured document.
+
+## Parameters
+
+- [input]: the raw source text that will be parsed into tokens
+- [strict]: when true, unknown tags raise a [ParseError] immediately
+
+## Returns
+
+A fully materialized [Document] instance ready for traversal.

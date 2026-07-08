@@ -1,0 +1,1 @@
+See the ![app dashboard](https://example.com/img.png) screenshot for a full overview

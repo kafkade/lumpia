@@ -6,6 +6,29 @@
  */
 
 import { displayWidth } from "../utils/displayWidth";
+import {
+  tryDocstringBlock,
+  wrapDocstringBlock,
+  isRestField,
+  isGoogleHeader,
+  isNumpyHeaderAt,
+  type DocstringBlock,
+} from "./docstring";
+
+/** Options controlling how content is parsed into blocks. */
+export interface ParseOptions {
+  /**
+   * When true, recognize Python docstring constructs (reST field lists,
+   * Google and NumPy sections) in addition to the generic markdown handling.
+   */
+  docstring?: boolean;
+  /**
+   * When true, parse the text as a LaTeX document: wrap prose paragraphs while
+   * preserving commands, environments, math, verbatim blocks, and comments.
+   * Markdown-specific constructs are not applied in this mode.
+   */
+  latex?: boolean;
+}
 
 // ── Block types ──────────────────────────────────────────────────────
 
@@ -17,9 +40,14 @@ export type ContentBlock =
   | HeadingBlock
   | BlockquoteBlock
   | DocTagBlock
+  | DocExampleBlock
+  | XmlDocBlock
   | BlankLineBlock
   | PreservedBreakBlock
-  | TableBlock;
+  | TableBlock
+  | LatexPreservedBlock
+  | LatexCommentBlock
+  | DocstringBlock;
 
 export interface ParagraphBlock {
   type: "paragraph";
@@ -60,6 +88,41 @@ export interface DocTagBlock {
   lines: string[];
 }
 
+/**
+ * A verbatim doc-comment example block (e.g. JSDoc/TSDoc `@example`). The
+ * `@example` line and every following line are preserved unchanged until the
+ * next block tag (`@tag`) or the end of the comment. Blank lines inside the
+ * example are kept, and the content is never reflowed so embedded code stays
+ * intact.
+ */
+export interface DocExampleBlock {
+  type: "doc-example";
+  lines: string[];
+}
+
+/**
+ * An XML documentation element (C#/F#/VB `///` doc comments), e.g.
+ * `<summary>`, `<param name="x">`, `<returns>`, `<remarks>`. The opening tag
+ * (with any attributes) and closing tag are preserved verbatim; the inner
+ * content is either wrapped as prose or — for verbatim tags like `<code>` and
+ * `<example>` — preserved unchanged.
+ */
+export interface XmlDocBlock {
+  type: "xml-doc";
+  /** Leading whitespace count on the opening-tag line. */
+  indent: number;
+  /** Opening tag verbatim, e.g. `<param name="x">`. */
+  openTag: string;
+  /** Lower-cased tag name, e.g. `param`. */
+  tagName: string;
+  /** Closing tag, e.g. `</param>`. */
+  closeTag: string;
+  /** True for tags whose inner content is preserved verbatim (`code`, `example`). */
+  verbatim: boolean;
+  /** Raw inner content lines between the opening and closing tags. */
+  innerLines: string[];
+}
+
 export interface BlankLineBlock {
   type: "blank-line";
 }
@@ -74,22 +137,426 @@ export interface TableBlock {
   lines: string[];
 }
 
+/**
+ * A run of LaTeX content preserved verbatim: `\begin{env}…\end{env}` blocks
+ * for verbatim/math environments, display/inline math spans (`\[ \]`, `$$ $$`),
+ * standalone command lines (`\section{…}`, `\begin{…}`, `\end{…}`, …), and
+ * prose lines carrying a trailing `%` comment. Lines are never reflowed.
+ */
+export interface LatexPreservedBlock {
+  type: "latex-preserved";
+  lines: string[];
+}
+
+/**
+ * A run of consecutive LaTeX comment lines (each starting with `%`). The marker
+ * (`%`, `%%`, …) and indent are preserved while the prose after the marker is
+ * reflowed to the target column.
+ */
+export interface LatexCommentBlock {
+  type: "latex-comment";
+  /** Leading whitespace before the marker. */
+  indent: string;
+  /** The comment marker itself, e.g. `%` or `%%`. */
+  marker: string;
+  /** Whitespace between marker and content. */
+  spacing: string;
+  /** Content lines with the prefix stripped. */
+  lines: string[];
+}
+
 // ── Detection patterns ───────────────────────────────────────────────
 
 const CODE_FENCE_RE = /^(`{3,}|~{3,})/;
+/** Indented code block: 4+ leading spaces or a leading tab (gofmt/CommonMark). */
+const INDENTED_CODE_RE = /^(?:\t| {4,})/;
 const HEADING_RE = /^#{1,6}(?:\s|$)/;
 const TABLE_RE = /^\|.*\|/;
 const BLOCKQUOTE_RE = /^(>\s?)/;
 const LIST_ITEM_RE = /^([-*+])\s|^(\d+[.)])\s/;
 const DOC_TAG_RE = /^@\w+/;
+/** Tags whose following content is preserved verbatim (e.g. `@example`). */
+const DOC_VERBATIM_TAG_RE = /^@(?:example|code)\b/i;
+/**
+ * Doc tags whose whole line(s) are preserved verbatim (never reflowed),
+ * because they carry type expressions or terse metadata rather than prose.
+ */
+const PRESERVE_TAGS = new Set(["@type", "@typedef", "@template"]);
+
+/**
+ * Block-level XML documentation tags (C#/F#/VB). When one of these appears at
+ * the start of a line, its element is captured and wrapped structurally.
+ */
+const XML_BLOCK_TAGS = new Set([
+  "summary",
+  "remarks",
+  "returns",
+  "param",
+  "typeparam",
+  "value",
+  "exception",
+  "para",
+  "example",
+  "code",
+  "list",
+  "item",
+  "description",
+]);
+/** XML doc tags whose inner content is preserved verbatim. */
+const XML_VERBATIM_TAGS = new Set(["code", "example"]);
+/** Match a (non-self-closing) XML opening tag at the start of `s`. */
+const XML_OPEN_TAG_RE = /^<([a-zA-Z][\w.-]*)((?:\s[^>]*?)?)>/;
+
+/**
+ * Match an XML opening tag (with any attributes) at the start of `s`. Returns
+ * the verbatim tag text and its lower-cased name, or null when `s` does not
+ * begin with an opening tag or begins with a self-closing tag.
+ */
+function matchXmlOpenTag(
+  s: string
+): { tagName: string; openTag: string } | null {
+  const m = XML_OPEN_TAG_RE.exec(s);
+  if (!m) return null;
+  // Exclude self-closing tags like `<see cref="x"/>`.
+  if (m[0].endsWith("/>")) return null;
+  return { tagName: m[1].toLowerCase(), openTag: m[0] };
+}
+
+/** True when `s` begins with a recognized block-level XML doc opening tag. */
+function isXmlBlockStart(s: string): boolean {
+  const open = matchXmlOpenTag(s);
+  return open !== null && XML_BLOCK_TAGS.has(open.tagName);
+}
+
+/**
+ * Collect a block-level XML documentation element starting at `lines[start]`.
+ * Returns the parsed block and the index of the next unconsumed line, or null
+ * when the line is not a recognized block tag or the element is unterminated.
+ */
+function collectXmlElement(
+  lines: string[],
+  start: number
+): { block: XmlDocBlock; next: number } | null {
+  const first = lines[start];
+  const trimmed = first.trimStart();
+  const indent = first.length - trimmed.length;
+  const open = matchXmlOpenTag(trimmed);
+  if (!open || !XML_BLOCK_TAGS.has(open.tagName)) return null;
+
+  const closeTag = `</${open.tagName}>`;
+  const verbatim = XML_VERBATIM_TAGS.has(open.tagName);
+  const innerLines: string[] = [];
+
+  const make = (next: number): { block: XmlDocBlock; next: number } => ({
+    block: {
+      type: "xml-doc",
+      indent,
+      openTag: open.openTag,
+      tagName: open.tagName,
+      closeTag,
+      verbatim,
+      innerLines,
+    },
+    next,
+  });
+
+  // Content on the opening-tag line after the tag.
+  const rest = trimmed.slice(open.openTag.length);
+  const sameLineClose = rest.indexOf(closeTag);
+  if (sameLineClose !== -1) {
+    const inner = rest.slice(0, sameLineClose);
+    if (inner.trim().length > 0) innerLines.push(inner);
+    return make(start + 1);
+  }
+  if (rest.trim().length > 0) innerLines.push(rest);
+
+  // Scan following lines for the closing tag.
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i];
+    const idx = line.indexOf(closeTag);
+    if (idx !== -1) {
+      const before = line.slice(0, idx);
+      if (before.trim().length > 0) innerLines.push(before);
+      return make(i + 1);
+    }
+    innerLines.push(line);
+  }
+
+  // Unterminated element — let the caller fall back to normal handling.
+  return null;
+}
 
 // ── Parser ───────────────────────────────────────────────────────────
+
+/**
+ * True when line `idx` begins a Python docstring construct (reST field,
+ * Google section header, or NumPy underlined header). Used to stop generic
+ * paragraph/list/doc-tag gathering from swallowing a following section.
+ */
+function isDocstringConstruct(
+  lines: string[],
+  idx: number,
+  trimmed: string
+): boolean {
+  return (
+    isRestField(trimmed) ||
+    isGoogleHeader(trimmed) ||
+    isNumpyHeaderAt(lines, idx)
+  );
+}
+
+// ── LaTeX detection ──────────────────────────────────────────────────
+
+/**
+ * Environments whose entire `\begin{env}…\end{env}` block is preserved
+ * verbatim: verbatim-style code listings and display-math environments.
+ */
+const LATEX_PRESERVED_ENVIRONMENTS = new Set([
+  // Verbatim / code listings
+  "verbatim",
+  "verbatim*",
+  "Verbatim",
+  "lstlisting",
+  "minted",
+  "alltt",
+  "comment",
+  // Display math
+  "math",
+  "displaymath",
+  "equation",
+  "equation*",
+  "align",
+  "align*",
+  "gather",
+  "gather*",
+  "multline",
+  "multline*",
+  "eqnarray",
+  "eqnarray*",
+  "flalign",
+  "flalign*",
+  "alignat",
+  "alignat*",
+]);
+
+/** Match `\begin{env}` / `\end{env}` at the start of a trimmed line. */
+const LATEX_ENV_RE = /^\\(begin|end)\s*\{([^}]*)\}/;
+/** A trimmed line that begins with a LaTeX control sequence (command). */
+const LATEX_COMMAND_RE = /^\\[a-zA-Z@]+\*?/;
+/** A trimmed line that opens a display-math span (`\[` or `$$`). */
+const LATEX_MATH_OPEN_RE = /^(\\\[|\$\$)/;
+
+/**
+ * Return the index of the first unescaped `%` (LaTeX comment marker) in
+ * `line`, or -1 when there is none. A `%` is escaped when preceded by an odd
+ * number of backslashes (`\%`), so `\\%` is a real comment marker.
+ */
+function latexCommentIndex(line: string): number {
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] !== "%") continue;
+    let backslashes = 0;
+    let j = i - 1;
+    while (j >= 0 && line[j] === "\\") {
+      backslashes++;
+      j--;
+    }
+    if (backslashes % 2 === 0) return i;
+  }
+  return -1;
+}
+
+/** Leading-whitespace length of a line. */
+function indentOf(line: string): number {
+  return line.length - line.trimStart().length;
+}
+
+/**
+ * True when `line` starts a construct that must not be merged into a wrapped
+ * prose paragraph: a comment line, an inline-comment line, a command/boundary
+ * line (`\begin`, `\end`, `\section`, …), or a display-math opener.
+ */
+function isLatexBoundary(line: string): boolean {
+  const indent = indentOf(line);
+  const trimmed = line.slice(indent);
+  if (trimmed === "") return true;
+  if (latexCommentIndex(line) !== -1) return true; // full or inline comment
+  if (LATEX_MATH_OPEN_RE.test(trimmed)) return true;
+  if (LATEX_COMMAND_RE.test(trimmed)) return true;
+  return false;
+}
+
+/**
+ * Parse the LaTeX construct starting at `lines[start]` (guaranteed non-blank),
+ * push exactly one block, and return the index of the next unconsumed line.
+ */
+function parseLatexBlock(
+  lines: string[],
+  start: number,
+  blocks: ContentBlock[]
+): number {
+  const line = lines[start];
+  const indent = indentOf(line);
+  const trimmed = line.slice(indent);
+  const commentIdx = latexCommentIndex(line);
+
+  // 1. Full comment line → gather a comment run.
+  if (commentIdx === indent) {
+    return parseLatexCommentRun(lines, start, indent, blocks);
+  }
+
+  // 2. Preserved environment (verbatim / math) → keep the whole block.
+  const envMatch = LATEX_ENV_RE.exec(trimmed);
+  if (
+    envMatch &&
+    envMatch[1] === "begin" &&
+    LATEX_PRESERVED_ENVIRONMENTS.has(envMatch[2].trim())
+  ) {
+    return parseLatexEnvironment(lines, start, envMatch[2].trim(), blocks);
+  }
+
+  // 3. Display-math span (`\[ … \]` or `$$ … $$`).
+  if (LATEX_MATH_OPEN_RE.test(trimmed)) {
+    return parseLatexMath(lines, start, trimmed, blocks);
+  }
+
+  // 4. Command / boundary line (`\begin{…}` of a non-preserved env, `\end{…}`,
+  //    `\section{…}`, `\usepackage…`, …) → preserved on its own line.
+  if (LATEX_COMMAND_RE.test(trimmed)) {
+    blocks.push({ type: "latex-preserved", lines: [line] });
+    return start + 1;
+  }
+
+  // 5. Prose line carrying a trailing inline `%` comment → preserved as-is.
+  if (commentIdx > indent) {
+    blocks.push({ type: "latex-preserved", lines: [line] });
+    return start + 1;
+  }
+
+  // 6. Prose paragraph → gather until the next boundary or blank line.
+  const paraLines: string[] = [line];
+  let i = start + 1;
+  while (i < lines.length) {
+    const pl = lines[i];
+    if (pl.trimStart() === "") break;
+    if (isLatexBoundary(pl)) break;
+    paraLines.push(pl);
+    i++;
+  }
+  blocks.push({ type: "paragraph", lines: paraLines });
+  return i;
+}
+
+/** Collect consecutive comment lines sharing the same indent and marker. */
+function parseLatexCommentRun(
+  lines: string[],
+  start: number,
+  indent: number,
+  blocks: ContentBlock[]
+): number {
+  const first = lines[start];
+  const markerMatch = /^%+/.exec(first.slice(indent));
+  const marker = markerMatch![0];
+  const prefixLen = indent + marker.length;
+
+  const stripContent = (line: string): string => {
+    let rest = line.slice(prefixLen);
+    if (rest.startsWith(" ")) rest = rest.slice(1);
+    return rest;
+  };
+
+  // Spacing is derived from the first line: `% text` → " ", `%text` → "".
+  const spacing = first.slice(prefixLen).startsWith(" ") ? " " : "";
+
+  const content: string[] = [stripContent(first)];
+  let i = start + 1;
+  while (i < lines.length) {
+    const line = lines[i];
+    const lineIndent = indentOf(line);
+    if (lineIndent !== indent) break;
+    if (latexCommentIndex(line) !== lineIndent) break;
+    const nextMarker = /^%+/.exec(line.slice(lineIndent))![0];
+    if (nextMarker !== marker) break;
+    content.push(stripContent(line));
+    i++;
+  }
+
+  blocks.push({
+    type: "latex-comment",
+    indent: " ".repeat(indent),
+    marker,
+    spacing,
+    lines: content,
+  });
+  return i;
+}
+
+/**
+ * Collect a preserved `\begin{env}…\end{env}` block, honoring nesting of the
+ * same environment name. Runs to end-of-input if the closer is missing.
+ */
+function parseLatexEnvironment(
+  lines: string[],
+  start: number,
+  env: string,
+  blocks: ContentBlock[]
+): number {
+  const collected: string[] = [lines[start]];
+  let depth = 1;
+  let i = start + 1;
+  for (; i < lines.length; i++) {
+    collected.push(lines[i]);
+    const m = LATEX_ENV_RE.exec(lines[i].trimStart());
+    if (m && m[2].trim() === env) {
+      if (m[1] === "begin") depth++;
+      else if (--depth === 0) {
+        i++;
+        break;
+      }
+    }
+  }
+  blocks.push({ type: "latex-preserved", lines: collected });
+  return i;
+}
+
+/** Collect a display-math span opened by `\[` or `$$`. */
+function parseLatexMath(
+  lines: string[],
+  start: number,
+  trimmed: string,
+  blocks: ContentBlock[]
+): number {
+  const opener = trimmed.startsWith("\\[") ? "\\[" : "$$";
+  const closer = opener === "\\[" ? "\\]" : "$$";
+  const afterOpener = trimmed.slice(opener.length);
+
+  // Single-line span: opener and closer on the same line.
+  if (afterOpener.includes(closer)) {
+    blocks.push({ type: "latex-preserved", lines: [lines[start]] });
+    return start + 1;
+  }
+
+  const collected: string[] = [lines[start]];
+  let i = start + 1;
+  for (; i < lines.length; i++) {
+    collected.push(lines[i]);
+    if (lines[i].includes(closer)) {
+      i++;
+      break;
+    }
+  }
+  blocks.push({ type: "latex-preserved", lines: collected });
+  return i;
+}
 
 /**
  * Parse text into a sequence of content blocks.
  * Best-effort detection of markdown-like structures.
  */
-export function parseContentBlocks(text: string): ContentBlock[] {
+export function parseContentBlocks(
+  text: string,
+  options: ParseOptions = {}
+): ContentBlock[] {
+  const { docstring = false, latex = false } = options;
   const lines = text.split("\n");
   const blocks: ContentBlock[] = [];
   let i = 0;
@@ -109,6 +576,25 @@ export function parseContentBlocks(text: string): ContentBlock[] {
       continue;
     }
     prevWasBlank = false;
+
+    // ── LaTeX document mode ────────────────────────────────────
+    // LaTeX has its own structural grammar (commands, environments, math,
+    // comments) that is unrelated to Markdown, so it is handled by a
+    // dedicated parser and never falls through to the Markdown detectors.
+    if (latex) {
+      i = parseLatexBlock(lines, i, blocks);
+      continue;
+    }
+
+    // ── Python docstring constructs (reST / Google / NumPy) ────
+    if (docstring) {
+      const doc = tryDocstringBlock(lines, i);
+      if (doc) {
+        blocks.push(doc.block);
+        i = doc.next;
+        continue;
+      }
+    }
 
     // ── Code fence ─────────────────────────────────────────────
     const fenceMatch = trimmed.match(CODE_FENCE_RE);
@@ -175,15 +661,55 @@ export function parseContentBlocks(text: string): ContentBlock[] {
       continue;
     }
 
+    // ── XML doc element (C#/F#/VB `///` doc comments) ──────────
+    const xmlOpen = matchXmlOpenTag(trimmed);
+    if (xmlOpen && XML_BLOCK_TAGS.has(xmlOpen.tagName)) {
+      const xml = collectXmlElement(lines, i);
+      if (xml) {
+        blocks.push(xml.block);
+        i = xml.next;
+        continue;
+      }
+      // Unterminated — fall through to normal handling.
+    }
+
     // ── Doc tag ────────────────────────────────────────────────
     if (DOC_TAG_RE.test(trimmed)) {
+      // ── Verbatim example: preserve following content unchanged ──
+      // until the next block tag (`@tag`) or end of input. Blank
+      // lines inside the example are kept so embedded code (and its
+      // spacing) survives intact.
+      if (DOC_VERBATIM_TAG_RE.test(trimmed)) {
+        const exampleLines = [line];
+        i++;
+        while (i < lines.length) {
+          if (DOC_TAG_RE.test(lines[i].trimStart())) break;
+          exampleLines.push(lines[i]);
+          i++;
+        }
+        // Trim trailing blank lines so they re-enter normal processing
+        // (keeping blank-line collapsing consistent with the rest of
+        // the parser).
+        while (
+          exampleLines.length > 1 &&
+          exampleLines[exampleLines.length - 1].trim() === ""
+        ) {
+          exampleLines.pop();
+          i--;
+        }
+        blocks.push({ type: "doc-example", lines: exampleLines });
+        continue;
+      }
+
       const tagLines = [line];
       i++;
       while (i < lines.length) {
         const tl = lines[i];
         const tt = tl.trimStart();
         if (tt === "") break;
+        if (docstring && isDocstringConstruct(lines, i, tt)) break;
         if (DOC_TAG_RE.test(tt)) break;
+        if (isXmlBlockStart(tt)) break;
         if (HEADING_RE.test(tt)) break;
         if (CODE_FENCE_RE.test(tt)) break;
         if (TABLE_RE.test(tt)) break;
@@ -221,11 +747,13 @@ export function parseContentBlocks(text: string): ContentBlock[] {
         const ll = lines[i];
         const lt = ll.trimStart();
         if (lt === "") break;
+        if (docstring && isDocstringConstruct(lines, i, lt)) break;
         if (LIST_ITEM_RE.test(lt)) break;
         if (HEADING_RE.test(lt)) break;
         if (CODE_FENCE_RE.test(lt)) break;
         if (TABLE_RE.test(lt)) break;
         if (DOC_TAG_RE.test(lt)) break;
+        if (isXmlBlockStart(lt)) break;
         if (BLOCKQUOTE_RE.test(lt)) break;
         // Continuation if indented past marker
         const llIndent = ll.length - lt.length;
@@ -245,15 +773,18 @@ export function parseContentBlocks(text: string): ContentBlock[] {
       continue;
     }
 
-    // ── Indented code (4+ spaces after blank line) ─────────────
+    // ── Indented code (4+ spaces or a leading tab after blank line) ──
+    // A tab-indented block is gofmt's convention for Godoc code examples;
+    // 4+ spaces is the CommonMark form used by Rustdoc/Dartdoc/Markdown.
     if (
       blocks.length > 0 &&
       blocks[blocks.length - 1].type === "blank-line" &&
-      /^ {4,}\S/.test(line)
+      INDENTED_CODE_RE.test(line) &&
+      line.trim() !== ""
     ) {
       const codeLines: string[] = [];
       while (i < lines.length) {
-        if (/^ {4,}/.test(lines[i]) || lines[i].trim() === "") {
+        if (INDENTED_CODE_RE.test(lines[i]) || lines[i].trim() === "") {
           codeLines.push(lines[i]);
           i++;
         } else {
@@ -287,12 +818,15 @@ export function parseContentBlocks(text: string): ContentBlock[] {
       const pl = lines[i];
       const pt = pl.trimStart();
       if (pt === "") break;
+      if (docstring && paraLines.length > 0 && isDocstringConstruct(lines, i, pt))
+        break;
       if (CODE_FENCE_RE.test(pt)) break;
       if (HEADING_RE.test(pt)) break;
       if (TABLE_RE.test(pt)) break;
       if (BLOCKQUOTE_RE.test(pt)) break;
       if (LIST_ITEM_RE.test(pt)) break;
       if (DOC_TAG_RE.test(pt)) break;
+      if (paraLines.length > 0 && isXmlBlockStart(pt)) break;
       // Check for preserved break — ends this paragraph
       if (pl.endsWith("  ")) {
         paraLines.push(pl);
@@ -334,6 +868,70 @@ export function isSentenceEnd(word: string): boolean {
 }
 
 /**
+ * Markdown constructs that must never be broken across lines, tried in
+ * order (longest/most-specific first) at each candidate position:
+ *   - inline doc tags:        `{@link target label}`, `{@tutorial ...}`
+ *   - inline links & images: `[label](target)`, `![alt](src "title")`
+ *   - reference links:        `[text][ref]`
+ *   - shortcut references:    `[text]`
+ *   - autolinks:              `<scheme:...>`
+ * Labels/targets may contain spaces, so these are kept as atomic tokens.
+ */
+const ATOMIC_LINK_RES: RegExp[] = [
+  /^\{@\w+[^}]*\}/,
+  /^!?\[[^\]]*\]\([^)]*\)/,
+  /^!?\[[^\]]*\]\[[^\]]*\]/,
+  /^!?\[[^\]]*\]/,
+  // Inline XML doc code span: `<c>...</c>` kept intact even with spaces.
+  /^<c>[^<]*<\/c>/,
+  // Self-closing XML doc tag with attributes, e.g. `<see cref="X"/>`.
+  /^<[a-zA-Z][\w.-]*(?:\s[^>]*?)?\/>/,
+  /^<[^>\s]+>/,
+];
+
+/** Match an atomic link/image span at the start of `s`, if any. */
+function matchAtomicLink(s: string): string | null {
+  for (const re of ATOMIC_LINK_RES) {
+    const m = re.exec(s);
+    if (m) return m[0];
+  }
+  return null;
+}
+
+/**
+ * Split text into whitespace-delimited tokens, but keep Markdown links,
+ * images, and references intact even when they contain spaces. Runs of
+ * whitespace between tokens are collapsed; whitespace inside a link is
+ * preserved as part of the atomic token.
+ */
+export function tokenize(text: string): string[] {
+  const tokens: string[] = [];
+  const n = text.length;
+  let i = 0;
+
+  while (i < n) {
+    if (/\s/.test(text[i])) {
+      i++;
+      continue;
+    }
+    let token = "";
+    while (i < n && !/\s/.test(text[i])) {
+      const link = matchAtomicLink(text.slice(i));
+      if (link) {
+        token += link;
+        i += link.length;
+      } else {
+        token += text[i];
+        i++;
+      }
+    }
+    tokens.push(token);
+  }
+
+  return tokens;
+}
+
+/**
  * Greedy-fill algorithm: fill lines up to `column` display width.
  * Returns wrapped lines (without newline characters).
  *
@@ -346,8 +944,8 @@ export function greedyFill(
   tabWidth: number,
   doubleSentenceSpacing = false
 ): string[] {
-  const words = text.replace(/\s+/g, " ").trim().split(" ");
-  if (words.length === 1 && words[0] === "") return [];
+  const words = tokenize(text);
+  if (words.length === 0) return [];
 
   const lines: string[] = [];
   let currentLine = "";
@@ -395,16 +993,28 @@ export function wrapBlock(
     case "indented-code":
     case "table":
       return block.lines.join("\n");
+    case "latex-preserved":
+      return block.lines.join("\n");
+    case "latex-comment":
+      return wrapLatexComment(block, column, tabWidth, doubleSentenceSpacing);
     case "heading":
       return block.line;
     case "blockquote":
       return wrapBlockquote(block, column, tabWidth, doubleSentenceSpacing);
     case "doc-tag":
       return wrapDocTag(block, column, tabWidth, doubleSentenceSpacing);
+    case "doc-example":
+      return block.lines.join("\n");
+    case "xml-doc":
+      return wrapXmlDoc(block, column, tabWidth, doubleSentenceSpacing);
     case "blank-line":
       return "";
     case "preserved-break":
       return block.line;
+    case "rest-field":
+    case "google-section":
+    case "numpy-section":
+      return wrapDocstringBlock(block, column, tabWidth, doubleSentenceSpacing);
   }
 }
 
@@ -420,6 +1030,31 @@ function wrapParagraph(
     tabWidth,
     doubleSentenceSpacing
   ).join("\n");
+}
+
+/**
+ * Wrap a LaTeX comment run: strip the `%` marker + indent, reflow the prose
+ * (blank comment lines act as paragraph breaks), then re-apply the prefix.
+ */
+function wrapLatexComment(
+  block: LatexCommentBlock,
+  column: number,
+  tabWidth: number,
+  doubleSentenceSpacing: boolean
+): string {
+  const prefix = block.indent + block.marker + block.spacing;
+  const bare = block.indent + block.marker;
+  const availableWidth = Math.max(1, column - displayWidth(prefix, tabWidth));
+
+  const innerBlocks = parseContentBlocks(block.lines.join("\n"));
+  const wrapped = innerBlocks
+    .map((b) => wrapBlock(b, availableWidth, tabWidth, doubleSentenceSpacing))
+    .join("\n");
+
+  return wrapped
+    .split("\n")
+    .map((l) => (l ? prefix + l : bare))
+    .join("\n");
 }
 
 function wrapListItem(
@@ -458,6 +1093,13 @@ function wrapDocTag(
   tabWidth: number,
   doubleSentenceSpacing: boolean
 ): string {
+  // Preserve tags are kept verbatim: their type expressions and following
+  // lines are never reflowed (e.g. `@type {LongUnion}`, `@typedef`,
+  // `@template`).
+  if (PRESERVE_TAGS.has(block.tag.toLowerCase())) {
+    return block.lines.join("\n");
+  }
+
   const firstLine = block.lines[0];
   const trimmed = firstLine.trimStart();
   const outerIndent = firstLine.length - trimmed.length;
@@ -499,6 +1141,57 @@ function wrapDocTag(
   return wrapped
     .map((line, i) => (i === 0 ? hangingPrefix : contPrefix) + line)
     .join("\n");
+}
+
+/**
+ * Wrap an XML documentation element. When the whole element fits on one line
+ * it is left as-is; otherwise the opening and closing tags sit on their own
+ * lines with the inner content wrapped as prose (or preserved verbatim for
+ * `<code>`/`<example>`).
+ */
+function wrapXmlDoc(
+  block: XmlDocBlock,
+  column: number,
+  tabWidth: number,
+  doubleSentenceSpacing: boolean
+): string {
+  const indentStr = " ".repeat(block.indent);
+  const innerColumn = Math.max(1, column - block.indent);
+
+  // Try a single line: `<tag>inner</tag>`. For verbatim tags this is only
+  // possible when the inner content is a single line.
+  const canSingleLine = !block.verbatim || block.innerLines.length <= 1;
+  if (canSingleLine) {
+    const innerSingle = block.verbatim
+      ? (block.innerLines[0] ?? "").trim()
+      : block.innerLines
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0)
+          .join(" ");
+    const singleLine = indentStr + block.openTag + innerSingle + block.closeTag;
+    if (displayWidth(singleLine, tabWidth) <= column) {
+      return singleLine;
+    }
+  }
+
+  // Expanded form: tags on their own lines.
+  const openLine = indentStr + block.openTag;
+  const closeLine = indentStr + block.closeTag;
+
+  if (block.verbatim) {
+    // Preserve inner content exactly.
+    return [openLine, ...block.innerLines, closeLine].join("\n");
+  }
+
+  const innerText = block.innerLines.map((l) => l.trim()).join(" ");
+  const wrapped = greedyFill(
+    innerText,
+    innerColumn,
+    tabWidth,
+    doubleSentenceSpacing
+  );
+  const innerOut = wrapped.map((l) => indentStr + l);
+  return [openLine, ...innerOut, closeLine].join("\n");
 }
 
 function wrapBlockquote(

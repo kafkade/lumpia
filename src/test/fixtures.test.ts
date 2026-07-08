@@ -19,6 +19,12 @@ import { join, relative } from "path";
 interface FixtureMeta {
   column: number;
   tabWidth: number;
+  /** When true, do not normalize CRLF→LF so real line-ending handling is tested. */
+  preserveEol?: boolean;
+  /** When true, wrap in Python docstring mode (reST/Google/NumPy sections). */
+  docstring?: boolean;
+  /** When true, wrap in LaTeX document mode. */
+  latex?: boolean;
 }
 
 const DEFAULT_META: FixtureMeta = { column: 80, tabWidth: 4 };
@@ -90,16 +96,14 @@ describe("golden fixtures", () => {
 
   for (const fixture of fixtures) {
     it(`${fixture.category}/${fixture.name}`, () => {
-      const input = readFileSync(fixture.inputPath, "utf-8").replace(
-        /\r\n/g,
-        "\n"
-      );
-      const expected = readFileSync(fixture.expectedPath, "utf-8").replace(
-        /\r\n/g,
-        "\n"
-      );
-      const { column, tabWidth } = fixture.meta;
-      const actual = rollText(input, column, { tabWidth });
+      const { column, tabWidth, preserveEol, docstring, latex } = fixture.meta;
+      // EOL fixtures must round-trip raw bytes; others are normalized so a
+      // git checkout with autocrlf doesn't spuriously fail the comparison.
+      const normalize = (s: string) =>
+        preserveEol ? s : s.replace(/\r\n/g, "\n");
+      const input = normalize(readFileSync(fixture.inputPath, "utf-8"));
+      const expected = normalize(readFileSync(fixture.expectedPath, "utf-8"));
+      const actual = rollText(input, column, { tabWidth, docstring, latex });
       expect(actual).toBe(expected);
     });
   }

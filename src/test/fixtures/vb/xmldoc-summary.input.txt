@@ -1,0 +1,5 @@
+<summary>
+Sends the notification to every subscriber registered for the specified channel.
+</summary>
+<param name="channel">The channel whose subscribers should receive the notification message.</param>
+<returns>The number of subscribers that were notified.</returns>

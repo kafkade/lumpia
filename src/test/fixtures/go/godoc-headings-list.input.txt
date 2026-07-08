@@ -1,0 +1,10 @@
+Package hash provides interfaces for hash functions.
+
+# Overview
+
+A Hash is a common interface implemented by every hash function in this package. Hash implementations are not safe for concurrent use.
+
+Supported algorithms:
+
+  - SHA-256: the default general-purpose cryptographic hash function
+  - CRC-32: a fast non-cryptographic checksum used for integrity checks

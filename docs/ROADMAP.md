@@ -101,15 +101,15 @@ Lumpia is a minimal VS Code extension with a single command (`lumpia.roll`, `Alt
 |----|------|-----|
 | M3-1 | Markdown-aware comment parsing (lists, code blocks, blockquotes) | ADR-005 |
 | M3-2 | JSDoc/TSDoc tag handling (`@param`, `@returns`, `@example`) | ADR-005 |
-| M3-3 | XMLDoc tag handling (C#, F#, VB) | — |
+| M3-3 | XMLDoc tag handling (C#, F#, VB) | ADR-005 |
 | M3-4 | Python docstring support (triple-quote, reST, NumPy, Google style) | — |
-| M3-5 | Rustdoc / Godoc / Dartdoc support | — |
-| M3-6 | LaTeX document support | — |
+| M3-5 | Rustdoc / Godoc / Dartdoc support | ✅ |
+| M3-6 | LaTeX document support | ✅ |
 | M3-7 | Tier 2 language expansion (20+ more languages) | — |
 | M3-8 | Tier 3 language fallback (plaintext wrapping for unknown) | — |
 | M3-9 | HTML/XML embedded comment support | — |
 
-**Tier 2 languages (basic line/block):** PHP, Perl, Lua, SQL, Swift, Kotlin, Scala, R, Julia, Elixir, Erlang, Haskell, F#, Clojure, YAML, TOML, INI, Dockerfile, Makefile, CSS/SCSS/Less, Elm, Dart
+**Tier 2 languages (basic line/block):** PHP, Perl, Lua, SQL, Swift, Kotlin, Scala, R, Julia, Elixir, Erlang, Haskell, F#, Clojure, YAML, TOML, INI, Dockerfile, Makefile, CSS/SCSS/Less, Elm
 
 ### M4: Advanced Features & Differentiators (Weeks 10-13)
 

@@ -1,0 +1,8 @@
+\documentclass{article}
+\begin{document}
+
+\section{Introduction}
+
+This is a fairly long paragraph of prose text that should be wrapped at the configured column width while the surrounding commands remain untouched.
+
+\end{document}

@@ -17,6 +17,8 @@ interface FixtureDef {
   input: string;
   column?: number;
   tabWidth?: number;
+  /** When true, wrap in Python docstring mode (reST/Google/NumPy sections). */
+  docstring?: boolean;
 }
 
 const fixtures: FixtureDef[] = [
@@ -101,6 +103,77 @@ const fixtures: FixtureDef[] = [
     column: 80,
     input: "This line is already short enough.\nNo wrapping needed here.",
   },
+  {
+    category: "typescript",
+    name: "jsdoc-throws",
+    column: 60,
+    input:
+      "@throws {RangeError} When the requested index is outside the bounds of the backing array and cannot be clamped safely",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-deprecated",
+    column: 60,
+    input:
+      "@deprecated Use the new configuration object instead of positional arguments; this overload will be removed in the next major release",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-example",
+    column: 60,
+    input: [
+      "@example",
+      "const greeting = greet('Ada', 'en-US', { includeTime: true });",
+      "",
+      "console.log(greeting);",
+      "@returns The formatted greeting string with the user name included",
+    ].join("\n"),
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-see-link",
+    column: 50,
+    input:
+      "@see the {@link GreetingService the greeting service} for the full details of how locales are resolved at runtime",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-type",
+    column: 40,
+    input:
+      "@type {SomeVeryLongUnionType | AnotherLongTypeName | YetAnotherOptionHere}",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-typedef",
+    column: 40,
+    input:
+      "@typedef {Object} GreetingOptions with a name and locale and includeTime flag",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-template",
+    column: 30,
+    input: "@template T The element type of the collection being iterated over",
+  },
+  {
+    category: "typescript",
+    name: "jsdoc-full",
+    column: 60,
+    input: [
+      "Creates a personalized greeting message for the user.",
+      "",
+      "@template T The locale token type accepted by the formatter",
+      "@param {string} name The user's full name as entered in the form",
+      "@param {T} locale The locale token used for date and time formatting",
+      "@returns The formatted greeting string containing the user name and time",
+      "@throws {TypeError} When the provided name is not a string value",
+      "@see the {@link Intl.DateTimeFormat the platform date formatter}",
+      "@example",
+      "const g = greet('Ada', 'en-US');",
+      "console.log(g);",
+    ].join("\n"),
+  },
 
   // ═══════════════════════════════════════════════════════════════════
   // javascript/ — inner content from JS comments and JSDoc
@@ -168,6 +241,25 @@ const fixtures: FixtureDef[] = [
     name: "already-wrapped",
     column: 80,
     input: "This line is already short enough.\nNo wrapping needed here.",
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-example",
+    column: 60,
+    input: [
+      "@example",
+      "const opts = parseQuery('a=1&b=2&flag', { arrays: true });",
+      "",
+      "merge(opts, defaults);",
+      "@returns A new options object built from the parsed query string",
+    ].join("\n"),
+  },
+  {
+    category: "javascript",
+    name: "jsdoc-type",
+    column: 40,
+    input:
+      "@type {Record<string, string | number | boolean> | null | undefined}",
   },
 
   // ═══════════════════════════════════════════════════════════════════
@@ -253,6 +345,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "docstring-prose",
     column: 60,
+    docstring: true,
     input: [
       "A utility module for processing CSV files.",
       "Handles encoding detection, delimiter inference,",
@@ -290,6 +383,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "docstring-code-example",
     column: 60,
+    docstring: true,
     input: [
       "Parse a date string into a datetime object.",
       "",
@@ -307,6 +401,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "numpy-style",
     column: 60,
+    docstring: true,
     input: [
       "Compute the cross-correlation between two signals.",
       "",
@@ -325,6 +420,39 @@ const fixtures: FixtureDef[] = [
   },
   {
     category: "python",
+    name: "google-style",
+    column: 60,
+    docstring: true,
+    input: [
+      "Fetch rows matching the query from the backing store.",
+      "",
+      "Args:",
+      "    query: The SQL query string to execute against the configured database",
+      "    limit (int): Maximum number of rows to return from the result set",
+      "",
+      "Returns:",
+      "    A list of row objects that matched the given query within the limit",
+      "",
+      "Raises:",
+      "    ValueError: If the provided limit is negative or is not a valid integer",
+    ].join("\n"),
+  },
+  {
+    category: "python",
+    name: "rest-fields",
+    column: 60,
+    docstring: true,
+    input: [
+      "Process a batch of records from the input queue.",
+      "",
+      ":param records: The list of record objects to process in this batch iteration",
+      ":param timeout: Maximum time in seconds to wait for each record to be processed",
+      ":returns: The number of successfully processed records",
+      ":raises ValueError: If the timeout is negative or is not a valid integer value",
+    ].join("\n"),
+  },
+  {
+    category: "python",
     name: "hash-comment-noop",
     column: 80,
     input: "Short comment.",
@@ -333,6 +461,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "sphinx-refs",
     column: 60,
+    docstring: true,
     input:
       "See :class:`UserManager` and :func:`create_user` for details on how user accounts are created and managed in the system",
   },
@@ -340,6 +469,7 @@ const fixtures: FixtureDef[] = [
     category: "python",
     name: "multiline-string",
     column: 60,
+    docstring: true,
     input: [
       "This is the content of a triple-quoted string.",
       "It spans multiple lines and should be reflowed",
@@ -446,6 +576,40 @@ const fixtures: FixtureDef[] = [
       "encoding/json. It returns an error if v cannot be represented as valid JSON.",
     ].join("\n"),
   },
+  {
+    category: "go",
+    name: "godoc-code-example",
+    column: 60,
+    input: [
+      "Fprintf formats according to a format specifier and writes to w.",
+      "",
+      "It returns the number of bytes written and any write error encountered during the call.",
+      "",
+      "\tn, err := fmt.Fprintf(w, \"%s: %d\\n\", label, count)",
+      "\tif err != nil {",
+      "\t\treturn err",
+      "\t}",
+      "",
+      "The verbs are the same as those understood by Printf.",
+    ].join("\n"),
+  },
+  {
+    category: "go",
+    name: "godoc-headings-list",
+    column: 60,
+    input: [
+      "Package hash provides interfaces for hash functions.",
+      "",
+      "# Overview",
+      "",
+      "A Hash is a common interface implemented by every hash function in this package. Hash implementations are not safe for concurrent use.",
+      "",
+      "Supported algorithms:",
+      "",
+      "  - SHA-256: the default general-purpose cryptographic hash function",
+      "  - CRC-32: a fast non-cryptographic checksum used for integrity checks",
+    ].join("\n"),
+  },
 
   // ═══════════════════════════════════════════════════════════════════
   // rust/ — inner content from Rust doc comments
@@ -547,6 +711,65 @@ const fixtures: FixtureDef[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════
+  // dart/ — inner content from Dart doc comments (///)
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "dart",
+    name: "dartdoc-simple",
+    column: 60,
+    input:
+      "Returns a new [Duration] representing the sum of this duration and the given [other] duration measured in whole microseconds",
+  },
+  {
+    category: "dart",
+    name: "dartdoc-refs",
+    column: 60,
+    input: [
+      "Fetches the [User] for the given [id].",
+      "",
+      "Throws a [NotFoundException] if no matching user exists. See [UserRepository.findById] for the underlying lookup and caching semantics used by this method.",
+    ].join("\n"),
+  },
+  {
+    category: "dart",
+    name: "dartdoc-code",
+    column: 60,
+    input: [
+      "Creates a client bound to [baseUrl].",
+      "",
+      "```dart",
+      "final client = ApiClient(baseUrl: 'https://api.example.com');",
+      "final user = await client.fetchUser(42);",
+      "```",
+      "",
+      "The client reuses a single connection pool for all outgoing requests.",
+    ].join("\n"),
+  },
+  {
+    category: "dart",
+    name: "dartdoc-mixed",
+    column: 60,
+    input: [
+      "Parses the raw [input] into a structured document.",
+      "",
+      "## Parameters",
+      "",
+      "- [input]: the raw source text that will be parsed into tokens",
+      "- [strict]: when true, unknown tags raise a [ParseError] immediately",
+      "",
+      "## Returns",
+      "",
+      "A fully materialized [Document] instance ready for traversal.",
+    ].join("\n"),
+  },
+  {
+    category: "dart",
+    name: "dartdoc-noop",
+    column: 80,
+    input: "Returns the number of active subscriptions.",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
   // csharp/ — inner content from C# comments and XMLDoc
   // ═══════════════════════════════════════════════════════════════════
   {
@@ -593,6 +816,91 @@ const fixtures: FixtureDef[] = [
     input: [
       "Returns the total number of active",
       "connections in the pool.",
+    ].join("\n"),
+  },
+  {
+    category: "csharp",
+    name: "xmldoc-returns-fits",
+    column: 60,
+    input: "<returns>true when the payload is valid</returns>",
+  },
+  {
+    category: "csharp",
+    name: "xmldoc-code-verbatim",
+    column: 60,
+    input: [
+      "<example>",
+      "<code>",
+      "var greeter = new Greeter(output);",
+      "greeter.Greet(\"Ada\", \"en-US\");",
+      "</code>",
+      "</example>",
+    ].join("\n"),
+  },
+  {
+    category: "csharp",
+    name: "xmldoc-selfclosing-inline",
+    column: 50,
+    input: [
+      "<summary>",
+      "Formats the value using <see cref=\"System.String.Format(System.String,System.Object)\"/> and returns it.",
+      "</summary>",
+    ].join("\n"),
+  },
+  {
+    category: "csharp",
+    name: "xmldoc-remarks-inline-code",
+    column: 50,
+    input: [
+      "<remarks>",
+      "Call <c>await</c> on the returned task before the connection is disposed by the pool manager.",
+      "</remarks>",
+    ].join("\n"),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // fsharp/ — inner content from F# comments and XMLDoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "fsharp",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Computes the running total of the sequence and returns it as a new immutable list",
+  },
+  {
+    category: "fsharp",
+    name: "xmldoc-summary",
+    column: 60,
+    input: [
+      "<summary>",
+      "Parses the supplied configuration text and returns a validated settings record.",
+      "</summary>",
+      "<param name=\"text\">The raw configuration text read from disk that will be parsed.</param>",
+      "<returns>The validated settings record produced from the input.</returns>",
+    ].join("\n"),
+  },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // vb/ — inner content from Visual Basic comments and XMLDoc
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "vb",
+    name: "line-comment-simple",
+    column: 40,
+    input:
+      "Persists the current record to the underlying data store and returns the assigned identifier",
+  },
+  {
+    category: "vb",
+    name: "xmldoc-summary",
+    column: 60,
+    input: [
+      "<summary>",
+      "Sends the notification to every subscriber registered for the specified channel.",
+      "</summary>",
+      "<param name=\"channel\">The channel whose subscribers should receive the notification message.</param>",
+      "<returns>The number of subscribers that were notified.</returns>",
     ].join("\n"),
   },
 
@@ -1018,6 +1326,178 @@ const fixtures: FixtureDef[] = [
     input:
       "Returns the number of elements currently stored.\nThis call never throws.",
   },
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Tier 2 languages — inner comment content wrapping
+  // ═══════════════════════════════════════════════════════════════════
+  {
+    category: "php",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Sanitizes the incoming request payload before it is handed off to the persistence layer for storage",
+  },
+  {
+    category: "swift",
+    name: "doc-comment-simple",
+    column: 50,
+    input:
+      "Returns a new array containing the elements that satisfy the given predicate closure in their original order",
+  },
+  {
+    category: "kotlin",
+    name: "kdoc-simple",
+    column: 50,
+    input:
+      "Launches a new coroutine on the provided dispatcher and returns a Job handle that can be used to cancel it",
+  },
+  {
+    category: "scala",
+    name: "scaladoc-simple",
+    column: 50,
+    input:
+      "Folds the collection from the left, applying the binary operator to an accumulator and each element in turn",
+  },
+  {
+    category: "groovy",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Configures the Gradle task graph so that the packaging step always runs after the compilation step completes",
+  },
+  {
+    category: "objective-c",
+    name: "doc-comment-simple",
+    column: 50,
+    input:
+      "Registers the observer for key value observing notifications on the specified key path of the receiver object",
+  },
+  {
+    category: "perl",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Reads the entire file into memory and splits it into records using the configured input record separator",
+  },
+  {
+    category: "r",
+    name: "roxygen-simple",
+    column: 50,
+    input:
+      "Fits a generalized linear model to the supplied data frame and returns the fitted model object for inspection",
+  },
+  {
+    category: "julia",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Computes the eigenvalues of the given square matrix using an in place algorithm that avoids extra allocation",
+  },
+  {
+    category: "elixir",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Spawns a supervised worker process and links it to the current supervisor so failures are restarted cleanly",
+  },
+  {
+    category: "erlang",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Sends the message asynchronously to the named gen server and returns immediately without awaiting a reply",
+  },
+  {
+    category: "clojure",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Transforms the input sequence lazily by mapping the function across every element and filtering the results",
+  },
+  {
+    category: "yaml",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Defines the deployment replica count and the resource limits applied to every pod created by this workload",
+  },
+  {
+    category: "toml",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Declares the build dependencies required to compile the project along with their exact pinned version ranges",
+  },
+  {
+    category: "ini",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Controls how often the background daemon flushes its write buffer to disk measured in whole seconds per cycle",
+  },
+  {
+    category: "dockerfile",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Installs the runtime dependencies in a single layer and clears the package cache to keep the image size small",
+  },
+  {
+    category: "makefile",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Rebuilds every object file whose source has changed and then relinks the final executable from the fresh objects",
+  },
+  {
+    category: "powershell",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Retrieves the collection of running services and filters them down to only those configured to start automatically",
+  },
+  {
+    category: "coffeescript",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Debounces the resize handler so the expensive layout recalculation only runs once the window stops changing size",
+  },
+  {
+    category: "lua",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Iterates over the table in an unspecified order and invokes the callback with each key and value pair encountered",
+  },
+  {
+    category: "sql",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Selects every order placed within the last thirty days and joins it against the customer table for the report",
+  },
+  {
+    category: "haskell",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Traverses the list applying the effectful action to each element and collecting the results inside the monad",
+  },
+  {
+    category: "elm",
+    name: "doc-comment-simple",
+    column: 50,
+    input:
+      "Updates the application model in response to the incoming message and returns the new model with any commands",
+  },
+  {
+    category: "pascal",
+    name: "line-comment-simple",
+    column: 50,
+    input:
+      "Allocates a new record on the heap and initializes each field to its default value before returning the pointer",
+  },
 ];
 
 // ── Generate ─────────────────────────────────────────────────────────
@@ -1031,17 +1511,19 @@ for (const f of fixtures) {
 
   const col = f.column ?? 80;
   const tw = f.tabWidth ?? 4;
+  const docstring = f.docstring ?? false;
 
   writeFileSync(join(dir, `${f.name}.input.txt`), f.input);
 
-  const expected = rollText(f.input, col, { tabWidth: tw });
+  const expected = rollText(f.input, col, { tabWidth: tw, docstring });
   writeFileSync(join(dir, `${f.name}.expected.txt`), expected);
 
   // Write meta only when non-default
-  if (col !== 80 || tw !== 4) {
-    const meta: Record<string, number> = {};
+  if (col !== 80 || tw !== 4 || docstring) {
+    const meta: Record<string, number | boolean> = {};
     if (col !== 80) meta.column = col;
     if (tw !== 4) meta.tabWidth = tw;
+    if (docstring) meta.docstring = true;
     writeFileSync(
       join(dir, `${f.name}.meta.json`),
       JSON.stringify(meta, null, 2) + "\n"

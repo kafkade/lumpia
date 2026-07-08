@@ -1,0 +1,3 @@
+Selects every order placed within the last thirty
+days and joins it against the customer table for
+the report

@@ -1,0 +1,6 @@
+@example
+const greeting = greet('Ada', 'en-US', { includeTime: true });
+
+console.log(greeting);
+@returns The formatted greeting string with the user name
+             included

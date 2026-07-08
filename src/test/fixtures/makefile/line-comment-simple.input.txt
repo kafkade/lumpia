@@ -1,0 +1,1 @@
+Rebuilds every object file whose source has changed and then relinks the final executable from the fresh objects

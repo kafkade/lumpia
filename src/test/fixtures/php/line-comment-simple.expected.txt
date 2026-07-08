@@ -1,0 +1,2 @@
+Sanitizes the incoming request payload before it
+is handed off to the persistence layer for storage

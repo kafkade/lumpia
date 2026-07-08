@@ -1,0 +1,1 @@
+@template T The element type of the collection being iterated over

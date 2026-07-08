@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   parseContentBlocks,
   greedyFill,
+  tokenize,
   wrapBlock,
   isSentenceEnd,
   type ContentBlock,
@@ -181,6 +182,55 @@ describe("parseContentBlocks", () => {
     expect(blocks[1].type).toBe("doc-tag");
   });
 
+  it("captures @example content verbatim as a doc-example block", () => {
+    const text = [
+      "@example",
+      "const x = foo(a, b, c);",
+      "console.log(x);",
+    ].join("\n");
+    const blocks = parseContentBlocks(text);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].type).toBe("doc-example");
+    if (blocks[0].type === "doc-example") {
+      expect(blocks[0].lines).toEqual([
+        "@example",
+        "const x = foo(a, b, c);",
+        "console.log(x);",
+      ]);
+    }
+  });
+
+  it("preserves blank lines inside an @example block", () => {
+    const text = [
+      "@example",
+      "const x = 1;",
+      "",
+      "const y = 2;",
+    ].join("\n");
+    const blocks = parseContentBlocks(text);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].type).toBe("doc-example");
+    if (blocks[0].type === "doc-example") {
+      expect(blocks[0].lines).toHaveLength(4);
+      expect(blocks[0].lines[2]).toBe("");
+    }
+  });
+
+  it("terminates an @example block at the next doc tag", () => {
+    const text = [
+      "@example",
+      "const x = foo();",
+      "@returns the result",
+    ].join("\n");
+    const blocks = parseContentBlocks(text);
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].type).toBe("doc-example");
+    if (blocks[0].type === "doc-example") {
+      expect(blocks[0].lines).toEqual(["@example", "const x = foo();"]);
+    }
+    expect(blocks[1].type).toBe("doc-tag");
+  });
+
   it("detects preserved breaks (trailing double space)", () => {
     const text = "line with break  ";
     const blocks = parseContentBlocks(text);
@@ -213,6 +263,16 @@ describe("parseContentBlocks", () => {
     // Should be treated as a single paragraph
     expect(blocks).toHaveLength(1);
     expect(blocks[0].type).toBe("paragraph");
+  });
+
+  it("detects tab-indented code after blank line (Godoc)", () => {
+    const text = "paragraph\n\n\tcode line 1\n\tcode line 2";
+    const blocks = parseContentBlocks(text);
+    const codeBlock = blocks.find((b) => b.type === "indented-code");
+    expect(codeBlock).toBeDefined();
+    if (codeBlock?.type === "indented-code") {
+      expect(codeBlock.lines).toEqual(["\tcode line 1", "\tcode line 2"]);
+    }
   });
 
   it("handles empty string", () => {
@@ -286,6 +346,107 @@ describe("greedyFill", () => {
 
   it("handles text exactly at column width", () => {
     expect(greedyFill("exactly ten", 11, 4)).toEqual(["exactly ten"]);
+  });
+});
+
+describe("tokenize", () => {
+  it("splits plain text on whitespace", () => {
+    expect(tokenize("one two three")).toEqual(["one", "two", "three"]);
+  });
+
+  it("collapses runs of whitespace", () => {
+    expect(tokenize("one   two\n\tthree")).toEqual(["one", "two", "three"]);
+  });
+
+  it("keeps inline links with spaces in the label intact", () => {
+    expect(tokenize("see [the big button](https://x.com/p) now")).toEqual([
+      "see",
+      "[the big button](https://x.com/p)",
+      "now",
+    ]);
+  });
+
+  it("keeps images with spaces intact", () => {
+    expect(tokenize("![a wide alt](img.png) end")).toEqual([
+      "![a wide alt](img.png)",
+      "end",
+    ]);
+  });
+
+  it("keeps inline links with a title intact", () => {
+    expect(tokenize('go [click me](https://x.com "a title") ok')).toEqual([
+      "go",
+      '[click me](https://x.com "a title")',
+      "ok",
+    ]);
+  });
+
+  it("keeps reference links intact", () => {
+    expect(tokenize("use [the label][ref one] here")).toEqual([
+      "use",
+      "[the label][ref one]",
+      "here",
+    ]);
+  });
+
+  it("keeps shortcut references intact", () => {
+    expect(tokenize("as in [see above] for context")).toEqual([
+      "as",
+      "in",
+      "[see above]",
+      "for",
+      "context",
+    ]);
+  });
+
+  it("keeps autolinks intact", () => {
+    expect(tokenize("visit <https://example.com/x> today")).toEqual([
+      "visit",
+      "<https://example.com/x>",
+      "today",
+    ]);
+  });
+
+  it("keeps inline doc tags with spaces intact", () => {
+    expect(
+      tokenize("see {@link Foo the label} for more")
+    ).toEqual(["see", "{@link Foo the label}", "for", "more"]);
+  });
+
+  it("attaches trailing punctuation to a link token", () => {
+    expect(tokenize("see [x](y).")).toEqual(["see", "[x](y)."]);
+  });
+});
+
+describe("greedyFill link preservation", () => {
+  it("never breaks an inline link mid-link", () => {
+    const result = greedyFill(
+      "Click [the big button](https://example.com/path) to continue",
+      30,
+      4
+    );
+    expect(result).toContain("[the big button](https://example.com/path)");
+    for (const line of result) {
+      expect(line).not.toMatch(/\[the big$/);
+    }
+  });
+
+  it("places an over-long link on its own line without splitting it", () => {
+    const link = "[a very long clickable label](https://example.com/very/long/path)";
+    const result = greedyFill(`start ${link} end`, 20, 4);
+    expect(result).toContain(link);
+  });
+
+  it("keeps a link intact at the end of a line", () => {
+    const result = greedyFill("padding words here [go now](u://x)", 25, 4);
+    expect(result.some((l) => l.includes("[go now](u://x)"))).toBe(true);
+    expect(result.join("\n")).not.toMatch(/\[go$/m);
+  });
+
+  it("does not alter links without internal spaces", () => {
+    expect(greedyFill("see [Config](struct.Config.html) here", 80, 4)).toEqual([
+      "see [Config](struct.Config.html) here",
+    ]);
   });
 });
 
@@ -430,6 +591,31 @@ describe("wrapBlock", () => {
     }
   });
 
+  it("preserves an @example block verbatim", () => {
+    const block: ContentBlock = {
+      type: "doc-example",
+      lines: [
+        "@example",
+        "const x = foo(reallyLongArgumentOne, reallyLongArgumentTwo, three);",
+        "console.log(x);",
+      ],
+    };
+    const result = wrapBlock(block, 40, 4);
+    expect(result).toBe(block.lines.join("\n"));
+  });
+
+  it("preserves @type/@typedef/@template tags verbatim", () => {
+    for (const tag of ["@type", "@typedef", "@template"]) {
+      const block: ContentBlock = {
+        type: "doc-tag",
+        tag,
+        lines: [`${tag} {SomeVeryLongUnionType | AnotherLongType | Third}`],
+      };
+      const result = wrapBlock(block, 30, 4);
+      expect(result).toBe(block.lines[0]);
+    }
+  });
+
   it("wraps blockquote with prefix", () => {
     const block: ContentBlock = {
       type: "blockquote",
@@ -469,5 +655,141 @@ describe("wrapBlock", () => {
     expect(wrapBlock(block, 20, 4)).toBe(
       "    for i in range(10):\n        print(i)"
     );
+  });
+});
+
+// ── XML documentation tags (C#/F#/VB) ────────────────────────────────
+
+describe("XML doc parsing", () => {
+  it("parses a multi-line summary element as one xml-doc block", () => {
+    const blocks = parseContentBlocks(
+      "<summary>\nCreates a greeting.\n</summary>"
+    );
+    expect(blocks).toEqual([
+      {
+        type: "xml-doc",
+        indent: 0,
+        openTag: "<summary>",
+        tagName: "summary",
+        closeTag: "</summary>",
+        verbatim: false,
+        innerLines: ["Creates a greeting."],
+      },
+    ]);
+  });
+
+  it("parses a single-line param element with attributes", () => {
+    const blocks = parseContentBlocks(
+      '<param name="name">The user name.</param>'
+    );
+    expect(blocks).toEqual([
+      {
+        type: "xml-doc",
+        indent: 0,
+        openTag: '<param name="name">',
+        tagName: "param",
+        closeTag: "</param>",
+        verbatim: false,
+        innerLines: ["The user name."],
+      },
+    ]);
+  });
+
+  it("flags <code> and <example> as verbatim", () => {
+    const blocks = parseContentBlocks(
+      "<code>\nvar x = 1;\n</code>"
+    );
+    expect(blocks[0].type).toBe("xml-doc");
+    expect((blocks[0] as { verbatim: boolean }).verbatim).toBe(true);
+  });
+
+  it("keeps consecutive elements as separate blocks", () => {
+    const blocks = parseContentBlocks(
+      '<summary>Does a thing.</summary>\n<returns>The result.</returns>'
+    );
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0].type).toBe("xml-doc");
+    expect(blocks[1].type).toBe("xml-doc");
+  });
+
+  it("does not treat prose containing < as an XML element", () => {
+    const blocks = parseContentBlocks("check that x < y before calling");
+    expect(blocks[0].type).toBe("paragraph");
+  });
+
+  it("falls back to paragraph for an unterminated element", () => {
+    const blocks = parseContentBlocks("<summary>never closed here");
+    expect(blocks[0].type).toBe("paragraph");
+  });
+});
+
+describe("XML doc wrapping", () => {
+  const xml = (
+    openTag: string,
+    tagName: string,
+    closeTag: string,
+    innerLines: string[],
+    verbatim = false,
+    indent = 0
+  ): ContentBlock => ({
+    type: "xml-doc",
+    indent,
+    openTag,
+    tagName,
+    closeTag,
+    verbatim,
+    innerLines,
+  });
+
+  it("leaves a short element untouched on one line", () => {
+    const block = xml("<returns>", "returns", "</returns>", ["true if valid"]);
+    expect(wrapBlock(block, 60, 4)).toBe("<returns>true if valid</returns>");
+  });
+
+  it("expands tags onto their own lines when content must wrap", () => {
+    const block = xml("<summary>", "summary", "</summary>", [
+      "Creates a personalized greeting for the specified user and writes it out.",
+    ]);
+    expect(wrapBlock(block, 40, 4)).toBe(
+      [
+        "<summary>",
+        "Creates a personalized greeting for the",
+        "specified user and writes it out.",
+        "</summary>",
+      ].join("\n")
+    );
+  });
+
+  it("preserves the opening tag attributes when expanding", () => {
+    const block = xml('<param name="name">', "param", "</param>", [
+      "The full name of the user that will be displayed in the greeting.",
+    ]);
+    const out = wrapBlock(block, 40, 4).split("\n");
+    expect(out[0]).toBe('<param name="name">');
+    expect(out[out.length - 1]).toBe("</param>");
+  });
+
+  it("preserves verbatim <code> content when expanding", () => {
+    const block = xml("<code>", "code", "</code>", [
+      "var x = compute(a, b);",
+      "Console.WriteLine(x);",
+    ], true);
+    expect(wrapBlock(block, 60, 4)).toBe(
+      "<code>\nvar x = compute(a, b);\nConsole.WriteLine(x);\n</code>"
+    );
+  });
+
+  it("keeps self-closing tags intact within wrapped prose", () => {
+    const block = xml("<summary>", "summary", "</summary>", [
+      'See <see cref="System.String"/> for details about formatting.',
+    ]);
+    const out = wrapBlock(block, 30, 4);
+    expect(out).toContain('<see cref="System.String"/>');
+    // The self-closing tag must never be split across lines.
+    for (const line of out.split("\n")) {
+      if (line.includes("<see")) {
+        expect(line).toContain('"/>');
+      }
+    }
   });
 });

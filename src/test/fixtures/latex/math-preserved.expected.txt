@@ -1,0 +1,13 @@
+Here is some introductory prose before the equation that is
+long enough to wrap nicely across several lines.
+
+\begin{equation}
+    E = mc^2 \qquad \text{and some very long inline content that should NOT be rewrapped at all}
+\end{equation}
+
+\[
+    a^2 + b^2 = c^2 \text{ this display math line is also intentionally quite long and must stay put}
+\]
+
+More trailing prose that also needs to be wrapped because it
+exceeds the sixty column limit set here.

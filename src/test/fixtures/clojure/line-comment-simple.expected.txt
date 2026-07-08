@@ -1,0 +1,3 @@
+Transforms the input sequence lazily by mapping
+the function across every element and filtering
+the results

@@ -1,0 +1,3 @@
+Debounces the resize handler so the expensive
+layout recalculation only runs once the window
+stops changing size
